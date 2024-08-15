@@ -22,9 +22,11 @@ const RCInboxes = () => {
 
   return (
     <div className="felx flex-col space-y-2 ">
-      {inboxes.map((inbox) => (
-        <RCInboxCard key={inbox.id} inbox={inbox} />
-      ))}
+      {inboxes.length > 0 ? (
+        inboxes.map((inbox) => <RCInboxCard key={inbox.id} inbox={inbox} />)
+      ) : (
+        <div className="text-center">Empty inboxes</div>
+      )}
     </div>
   );
 };

@@ -47,7 +47,6 @@ const Login = () => {
     try {
       const res = await login(values);
       if (res.status === 200 && res.data) {
-        console.log(res.data.data);
         setToken(res.data.data);
         navigate("/");
       }

@@ -6,7 +6,10 @@ interface Menu {
   name: string;
   path: string;
 }
-const publicMenu: Menu[] = [{ name: "Home", path: "/" }];
+const publicMenu: Menu[] = [
+  { name: "Home", path: "/" },
+  { name: "Chat", path: "/chat" },
+];
 const authMenu: Menu[] = [
   { name: "Create Account", path: "/sign-up" },
   { name: "Login", path: "/login" },

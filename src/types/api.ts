@@ -78,8 +78,8 @@ export interface Room {
   members: GroupMember[];
   friend: Profile;
   messages: Message[];
-  messageCount: string | null;
-  unreadCount: string | null;
+  messageCount: number | null;
+  unreadCount: number | null;
 }
 
 export interface Inbox {
@@ -118,7 +118,7 @@ export interface UpdateGroupNameBody {
 }
 
 export interface SendMessageBody {
-  type: string;
+  type: MessageType;
   content: string;
 }
 export interface ReplyMessageBody {
