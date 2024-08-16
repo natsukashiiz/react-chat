@@ -1,18 +1,22 @@
-import { Token } from "@/types/api";
+import { Profile, Token } from "@/types/api";
 import { create } from "zustand";
 import client from "@/api/request";
+import { getProfile } from "@/api/profile";
 
 interface AuthState {
   token: Token | null;
   authenticated: boolean;
+  profile: Profile | null;
   setToken: (token: Token) => void;
-  removeToken: () => void;
   loadAuth: () => void;
+  loadProfile: () => void;
+  clearAuth: () => void;
 }
 
-const useAuthStore = create<AuthState>()((set) => ({
+const useAuthStore = create<AuthState>()((set, get) => ({
   token: null,
   authenticated: false,
+  profile: null,
   setToken: (token) => {
     localStorage.setItem("token", JSON.stringify(token));
     set({ token, authenticated: true });
@@ -28,10 +32,8 @@ const useAuthStore = create<AuthState>()((set) => ({
         return Promise.reject(error);
       }
     );
-  },
-  removeToken: () => {
-    localStorage.removeItem("token");
-    set({ token: null, authenticated: false });
+
+    get().loadProfile();
   },
   loadAuth: () => {
     console.log("loadAuth");
@@ -52,7 +54,23 @@ const useAuthStore = create<AuthState>()((set) => ({
           return Promise.reject(error);
         }
       );
+
+      get().loadProfile();
     }
+  },
+  loadProfile: async () => {
+    try {
+      const res = await getProfile();
+      if (res.status === 200 && res.data) {
+        set({ profile: res.data.data });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  },
+  clearAuth: () => {
+    localStorage.removeItem("token");
+    set({ token: null, authenticated: false, profile: null });
   },
 }));
 

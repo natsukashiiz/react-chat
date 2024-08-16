@@ -5,19 +5,24 @@ import {
   rejectFriend,
   searchFriend,
 } from "@/api/friend";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import useProfileStore from "@/stores/profile";
+import UserAvatar from "@/components/UserAvatar";
+import useAuthStore from "@/stores/auth";
 import { Friend } from "@/types/api";
 import { FriendStatus } from "@/types/enum";
+import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 
 const Friends = () => {
-  const { profile } = useProfileStore();
+  const { profile } = useAuthStore();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [friend, setFriend] = useState<Friend | null>(null);
   const [keyword, setKeyword] = useState<string>("");
+  const [searching, setSearching] = useState<boolean>(false);
+  const [notFound, setNotFound] = useState<boolean>(false);
 
   useEffect(() => {
     const loadFriends = async () => {
@@ -34,6 +39,8 @@ const Friends = () => {
   }, []);
 
   const handleSearchFriend = async (keyword: string) => {
+    setNotFound(false);
+    setSearching(true);
     try {
       const res = await searchFriend(keyword);
       if (res.status === 200 && res.data) {
@@ -41,7 +48,15 @@ const Friends = () => {
       }
     } catch (error) {
       console.error(error);
+      if (error instanceof AxiosError && error.response) {
+        if (error.response.status === 417) {
+          if (error.response.data.error === "friend.not.found") {
+            setNotFound(true);
+          }
+        }
+      }
     }
+    setSearching(false);
   };
 
   const handleAddFriend = async (friendId: number) => {
@@ -89,17 +104,20 @@ const Friends = () => {
             />
             <Button onClick={() => handleSearchFriend(keyword)}>Search</Button>
           </div>
+          {searching && <div>Searching...</div>}
+          {notFound && <div>Friend not found</div>}
           {friend && (
-            <div className="flex items-center space-x-4">
-              <img
-                src={friend?.friend.avatar}
-                alt={friend?.friend.username}
-                className="w-10 h-10 rounded-full"
-              />
-              <div>
-                <div className="font-semibold">{friend?.friend.username}</div>
-                <div className="text-sm text-gray-500">
-                  {friend?.friend.mobile}
+            <div className="w-full flex flex-col items-center space-y-4">
+              <div className="flex space-x-4 border p-5 rounded-xl">
+                <UserAvatar
+                  avatar={friend.friend.avatar}
+                  name={friend.friend.nickname}
+                />
+                <div>
+                  <div className="font-semibold">{friend?.friend.username}</div>
+                  <div className="text-sm text-gray-500">
+                    {friend?.friend.mobile}
+                  </div>
                 </div>
               </div>
               <Button
@@ -115,39 +133,45 @@ const Friends = () => {
         </div>
       </Card>
       <Card>
-        <CardHeader>{friends.length} Friends Request</CardHeader>
+        <CardHeader>
+          Friends Request ({friends.length > 99 ? "99+" : friends.length})
+        </CardHeader>
         <CardContent>
           <div className="flex flex-col h-full items-center justify-center p-6">
             {friends.length > 0 ? (
               friends.map((friend) => (
                 <div
                   key={friend.friend.id}
-                  className="flex items-center space-x-4"
+                  className="w-full flex items-center justify-between space-x-4"
                 >
-                  <img
-                    src={friend.friend.avatar}
-                    alt={friend.friend.username}
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div>
-                    <div className="font-semibold">
-                      {friend.friend.username}
+                  <div className="flex space-x-4">
+                    <UserAvatar
+                      avatar={friend.friend.avatar}
+                      name={friend.friend.nickname}
+                    />
+                    <div>
+                      <div className="font-semibold">
+                        {friend.friend.username}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {friend.friend.mobile}
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {friend.friend.mobile}
-                    </div>
-                    <div className="flex space-x-4">
-                      <Button
-                        onClick={() => handleAcceptFriend(friend.friend.id)}
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        onClick={() => handleRejectFriend(friend.friend.id)}
-                      >
-                        Reject
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      size={"sm"}
+                      onClick={() => handleAcceptFriend(friend.friend.id)}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      size={"sm"}
+                      variant={"outline"}
+                      onClick={() => handleRejectFriend(friend.friend.id)}
+                    >
+                      Reject
+                    </Button>
                   </div>
                 </div>
               ))

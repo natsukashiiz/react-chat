@@ -1,20 +1,20 @@
 import { getInboxes } from "@/api/inbox";
-import { Button } from "@/components/ui/button";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { Inbox, Message } from "@/types/api";
+import type { Inbox, Message } from "@/types/api";
 import { getMessages, sendMessage } from "@/api/message";
-import { MessageType, RoomType } from "@/types/enum";
-import useProfileStore from "@/stores/profile";
+import { MessageType } from "@/types/enum";
+import useAuthStore from "@/stores/auth";
+import InboxLayout from "@/components/inbox/InboxLayout";
+import ChatLayout from "@/components/chat/ChatLayout";
 
 const Chat = () => {
-  const { profile } = useProfileStore();
+  const { profile, clearAuth } = useAuthStore();
+
   const [inboxes, setInboxes] = useState<Inbox[]>([]);
   const [curInbox, setCurInbox] = useState<Inbox | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -115,6 +115,11 @@ const Chat = () => {
     }
   };
 
+  const handleLogout = () => {
+    clearAuth();
+    window.location.href = "/login";
+  };
+
   return (
     <div className="h-dvh">
       <ResizablePanelGroup
@@ -122,125 +127,26 @@ const Chat = () => {
         className="h-full w-full border"
       >
         <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
-          <div className="border-b w-full flex justify-between items-center h-20 px-4">
-            <span className="font-semibold">Inboxes</span>
-            <div className="flex space-x-1">
-              <Button size={"sm"}>Groups</Button>
-              <Button size={"sm"} asChild>
-                <Link to="/friends">Friends</Link>
-              </Button>
-            </div>
-          </div>
-          <div className="flex flex-col h-full items-center p-6">
-            {inboxes.length > 0 ? (
-              inboxes.map((inbox) => (
-                <div
-                  key={inbox.id}
-                  className={`flex items-center space-x-2 my-1 w-full p-2 hover:bg-accent rounded-lg cursor-pointer ${
-                    inbox.room.id === curInbox?.room.id
-                      ? "bg-accent"
-                      : inbox.unreadCount > 0
-                      ? "bg-rose-100"
-                      : ""
-                  }`}
-                  onClick={() => setCurInbox(inbox)}
-                >
-                  <Avatar className="w-10 h-10 rounded-full">
-                    <AvatarImage
-                      src={inbox.room.image!}
-                      alt={inbox.room.name!}
-                    />
-                    <AvatarFallback>
-                      {inbox.room.name?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-semibold">
-                      {inbox.room.name}{" "}
-                      {inbox.unreadCount > 0 &&
-                        `(${
-                          inbox.unreadCount > 99 ? "99+" : inbox.unreadCount
-                        })`}
-                    </div>
-                    {inbox.lastMessage ? (
-                      <div className="truncate text-ellipsis w-72">
-                        {inbox.lastMessage.content}
-                      </div>
-                    ) : (
-                      <div>No messages</div>
-                    )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center">Empty inboxes</div>
-            )}
-          </div>
+          <InboxLayout
+            inboxes={inboxes}
+            curInbox={curInbox}
+            setCurInbox={setCurInbox}
+            profile={profile}
+            handleLogout={handleLogout}
+          />
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={70}>
-          <div className="flex flex-col justify-between w-full h-full">
-            <div className="w-full h-20 flex p-5 justify-between items-center border-b">
-              <div className="flex flex-col space-y-1">
-                <span className="font-semibold">
-                  {curInbox ? curInbox.room.name : "Select Inbox"}
-                </span>
-                {curInbox && curInbox.room.type == RoomType.Friend && (
-                  <span className="text-xs">
-                    Last seen {curInbox.room.friend.lastSeenAt.toString()}
-                  </span>
-                )}
-              </div>
-              <div className="flex space-x-1">
-                <Button size={"sm"}>Actions</Button>
-              </div>
-            </div>
-            <div
-              ref={messagesContainerRef}
-              className="w-full overflow-y-auto overflow-x-hidden h-full flex flex-col px-2"
-            >
-              {messages.length > 0 ? (
-                messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex items-center space-x-2 my-1 w-full p-2 rounded-lg ${
-                      message.sender.id === profile?.id ? "justify-end" : ""
-                    }`}
-                  >
-                    {message.sender.id !== profile?.id && (
-                      <Avatar className="w-10 h-10 rounded-full">
-                        <AvatarImage
-                          src={message.sender.avatar}
-                          alt={message.sender.nickname}
-                        />
-                        <AvatarFallback>
-                          {message.sender.nickname?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                    <div className="bg-accent p-3 rounded-md max-w-xs">
-                      <div>{message.content}</div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center">No messages</div>
-              )}
-            </div>
-            {curInbox && (
-              <div className="p-2 flex justify-between w-full items-center gap-2">
-                <input
-                  type="text"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  onKeyUp={handleKeyPress}
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="Type a message..."
-                />
-                <Button onClick={() => handleSendMessage()}>Send</Button>
-              </div>
-            )}
-          </div>
+          <ChatLayout
+            contentRef={messagesContainerRef}
+            curInbox={curInbox}
+            messages={messages}
+            profile={profile}
+            content={content}
+            setContent={setContent}
+            handleSendMessage={handleSendMessage}
+            handleKeyPress={handleKeyPress}
+          />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

@@ -67,7 +67,7 @@ const Login = () => {
       const res = await sigup(values);
       if (res.status === 200 && res.data) {
         setToken(res.data.data);
-        navigate("/");
+        navigate("/chat");
       }
     } catch (error) {
       console.error(error);
@@ -166,9 +166,9 @@ const Login = () => {
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link to={"/sign-up"} className="underline">
-                Sign up
+              Already have an account?{" "}
+              <Link to={"/login"} className="underline">
+                Login
               </Link>
             </div>
           </form>
