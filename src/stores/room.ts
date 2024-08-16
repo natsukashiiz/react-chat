@@ -10,7 +10,7 @@ interface RoomState {
 const useRoomStore = create<RoomState>((set) => ({
   currentRoom: null,
   setCurrentRoom: (room) => {
-    console.log("setCurrentRoom");
+    console.log("setCurrentRoom", room.id);
     set({ currentRoom: room });
   },
   removeCurrentRoom: () => {

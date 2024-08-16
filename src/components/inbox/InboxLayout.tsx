@@ -4,14 +4,14 @@ import InboxContent from "./InboxContent";
 import InboxHeader from "./InboxHeader";
 
 interface InboxProps {
-  inboxes: Inbox[];
+  rooms: Map<number, Inbox>;
   curInbox: Inbox | null;
   setCurInbox: (inbox: Inbox) => void;
   profile: Profile | null;
   handleLogout: () => void;
 }
 const InboxLayout = ({
-  inboxes,
+  rooms,
   curInbox,
   setCurInbox,
   profile,
@@ -21,7 +21,7 @@ const InboxLayout = ({
     <div className="flex flex-col justify-between w-full h-full">
       <InboxHeader />
       <InboxContent
-        inboxes={inboxes}
+        rooms={rooms}
         curInbox={curInbox}
         setCurInbox={setCurInbox}
       />

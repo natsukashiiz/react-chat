@@ -42,8 +42,6 @@ const Login = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log(values);
-
     try {
       const res = await login(values);
       if (res.status === 200 && res.data) {

@@ -11,17 +11,61 @@ import { MessageType } from "@/types/enum";
 import useAuthStore from "@/stores/auth";
 import InboxLayout from "@/components/inbox/InboxLayout";
 import ChatLayout from "@/components/chat/ChatLayout";
+import Stomp from "stompjs";
+import SockJS from "sockjs-client";
 
 const Chat = () => {
-  const { profile, clearAuth } = useAuthStore();
+  const { profile, clearAuth, token } = useAuthStore();
 
+  const [rooms, setRooms] = useState<Map<number, Inbox>>(new Map());
   const [inboxes, setInboxes] = useState<Inbox[]>([]);
   const [curInbox, setCurInbox] = useState<Inbox | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState<string>("");
   const [pagination, setPagination] = useState({ page: 1, size: 30, total: 0 });
+  const [stompClient, setStompClient] = useState<Stomp.Client | null>(null);
+
+  const [websocketConnected, setWebsocketConnected] = useState<boolean>(false);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (websocketConnected) return;
+    setWebsocketConnected(true);
+
+    let client: Stomp.Client | null = null;
+
+    if (token && stompClient === null) {
+      const socket = new SockJS("http://192.168.1.99:8080/ws");
+      client = Stomp.over(socket);
+
+      client.connect(
+        { Authorization: `Bearer ${token.accessToken}` },
+        function (frame) {
+          console.log("Connected: " + frame);
+          setStompClient(client);
+
+          if (!client) return;
+
+          client?.subscribe("/user/topic/messages", function (message) {
+            const newMessage = JSON.parse(message.body) as Message;
+            handleReceiveMessage(newMessage);
+          });
+        },
+        function (error) {
+          console.error("Connection failed: " + error);
+        }
+      );
+    }
+
+    return () => {
+      if (client && client.connected) {
+        client.disconnect(() => {
+          console.log("Stomp client disconnected");
+        });
+      }
+    };
+  }, [token, stompClient]);
 
   useEffect(() => {
     if (messagesContainerRef.current) {
@@ -36,6 +80,12 @@ const Chat = () => {
         const res = await getInboxes();
         if (res.status === 200 && res.data) {
           setInboxes([...res.data.data]);
+
+          for (const inbox of res.data.data) {
+            setRooms((prevRoom) => {
+              return new Map(prevRoom.set(inbox.room.id, inbox));
+            });
+          }
         }
       } catch (error) {
         console.error(error);
@@ -46,6 +96,7 @@ const Chat = () => {
 
   useEffect(() => {
     if (curInbox) {
+      console.log("ROOM INFO", rooms.get(curInbox.room.id));
       const loadMessages = async () => {
         try {
           const res = await getMessages(curInbox.room.id, {
@@ -80,6 +131,10 @@ const Chat = () => {
     }
   }, [curInbox]);
 
+  useEffect(() => {
+    console.log("messages", messages);
+  }, [messages]);
+
   const handleSendMessage = async () => {
     if (curInbox) {
       try {
@@ -109,6 +164,15 @@ const Chat = () => {
     }
   };
 
+  const handleReceiveMessage = (message: Message) => {
+    if (rooms.get(message.room.id)) {
+      rooms.get(message.room.id)?.room.messages.push(message);
+      setRooms(new Map(rooms));
+    } else {
+      console.log("Handle receive message", message);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleSendMessage();
@@ -128,7 +192,7 @@ const Chat = () => {
       >
         <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
           <InboxLayout
-            inboxes={inboxes}
+            rooms={rooms}
             curInbox={curInbox}
             setCurInbox={setCurInbox}
             profile={profile}
@@ -139,6 +203,7 @@ const Chat = () => {
         <ResizablePanel defaultSize={70}>
           <ChatLayout
             contentRef={messagesContainerRef}
+            rooms={rooms}
             curInbox={curInbox}
             messages={messages}
             profile={profile}

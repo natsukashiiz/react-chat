@@ -1,24 +1,30 @@
-import { Message, Profile } from "@/types/api";
+import { Inbox, Message, Profile } from "@/types/api";
 import ChatMessage from "./ChatMessage";
 
 interface ChatContentProps {
   contentRef: React.RefObject<HTMLDivElement>;
+  rooms: Map<number, Inbox>;
   messages: Message[];
   profile: Profile | null;
+  curInbox: Inbox | null;
 }
-const ChatContent = ({ messages, contentRef, profile }: ChatContentProps) => {
+const ChatContent = ({
+  rooms,
+  contentRef,
+  profile,
+  curInbox,
+}: ChatContentProps) => {
+  const currentInbox = rooms.get(curInbox?.id || 0);
+  console.log("currentInbox", currentInbox);
+
   return (
     <div
       ref={contentRef}
       className="w-full overflow-y-auto overflow-x-hidden h-full flex flex-col px-2"
     >
-      {messages.length > 0 ? (
-        messages.map((message) => (
-          <ChatMessage key={message.id} message={message} profile={profile} />
-        ))
-      ) : (
-        <div className="text-center">No messages</div>
-      )}
+      {currentInbox?.room.messages.map((message) => (
+        <ChatMessage key={message.id} message={message} profile={profile} />
+      ))}
     </div>
   );
 };

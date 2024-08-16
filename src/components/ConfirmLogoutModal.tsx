@@ -19,7 +19,7 @@ const ConfirmLogoutModal = ({
 }: PropsWithChildren<ConfirmLogoutModalProps>) => {
   return (
     <Dialog>
-      <DialogTrigger>{children}</DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Are you sure you want to logout?</DialogTitle>
@@ -28,9 +28,7 @@ const ConfirmLogoutModal = ({
           <div className="flex justify-end space-x-2">
             <Button onClick={handleLogout}>Confirm</Button>
             <DialogClose asChild>
-              <Button type="button" variant="secondary">
-                Cancel
-              </Button>
+              <Button variant="secondary">Close</Button>
             </DialogClose>
           </div>
         </DialogFooter>

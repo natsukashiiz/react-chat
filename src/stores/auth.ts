@@ -36,8 +36,6 @@ const useAuthStore = create<AuthState>()((set, get) => ({
     get().loadProfile();
   },
   loadAuth: () => {
-    console.log("loadAuth");
-
     const tokenStr = localStorage.getItem("token");
     if (tokenStr) {
       const token = JSON.parse(tokenStr) as Token;

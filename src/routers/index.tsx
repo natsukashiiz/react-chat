@@ -5,15 +5,12 @@ import Login from "@/pages/Login";
 import SignUp from "@/pages/SignUp";
 import Chat from "@/pages/Chat";
 import Friends from "@/pages/Friends";
+import AuthProvider from "@/providers/AuthProvider";
 
 const routers = createBrowserRouter([
   {
     path: "*",
     element: <NotFound />,
-  },
-  {
-    path: "/",
-    element: <Chat />,
   },
   {
     path: "/login",
@@ -24,12 +21,18 @@ const routers = createBrowserRouter([
     element: <SignUp />,
   },
   {
-    path: "/chat",
-    element: <Chat />,
-  },
-  {
-    path: "/friends",
-    element: <Friends />,
+    path: "/",
+    element: <AuthProvider />,
+    children: [
+      {
+        path: "/chat",
+        element: <Chat />,
+      },
+      {
+        path: "/friends",
+        element: <Friends />,
+      },
+    ],
   },
 ]);
 

@@ -2,29 +2,21 @@ import { Inbox } from "@/types/api";
 import InboxItem from "./InboxItem";
 
 interface InboxContentProps {
-  inboxes: Inbox[];
+  rooms: Map<number, Inbox>;
   curInbox: Inbox | null;
   setCurInbox: (inbox: Inbox) => void;
 }
-const InboxContent = ({
-  inboxes,
-  curInbox,
-  setCurInbox,
-}: InboxContentProps) => {
+const InboxContent = ({ rooms, curInbox, setCurInbox }: InboxContentProps) => {
   return (
     <div className="flex flex-col h-full items-center p-6 w-full overflow-y-auto overflow-x-hidden">
-      {inboxes.length > 0 ? (
-        inboxes.map((inbox) => (
-          <InboxItem
-            key={inbox.id}
-            inbox={inbox}
-            curInbox={curInbox}
-            setCurInbox={setCurInbox}
-          />
-        ))
-      ) : (
-        <div className="text-center">No inbox</div>
-      )}
+      {[...rooms].map(([key, value]) => (
+        <InboxItem
+          key={key}
+          inbox={value}
+          curInbox={curInbox}
+          setCurInbox={setCurInbox}
+        />
+      ))}
     </div>
   );
 };
