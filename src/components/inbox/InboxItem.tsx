@@ -3,21 +3,25 @@ import UserAvatar from "../UserAvatar";
 
 interface InboxItemProps {
   inbox: Inbox;
-  curInbox: Inbox | null;
-  setCurInbox: (inbox: Inbox) => void;
+  currentInbox: Inbox | null;
+  setCurrentInbox: (inbox: Inbox) => void;
 }
-const InboxItem = ({ inbox, curInbox, setCurInbox }: InboxItemProps) => {
+const InboxItem = ({
+  inbox,
+  currentInbox,
+  setCurrentInbox,
+}: InboxItemProps) => {
   return (
     <div
       key={inbox.id}
       className={`flex items-center space-x-2 my-1 w-full p-2 hover:bg-accent rounded-lg cursor-pointer ${
-        inbox.room.id === curInbox?.room.id
+        inbox.room.id === currentInbox?.room.id
           ? "bg-accent"
           : inbox.unreadCount > 0
           ? "bg-rose-100"
           : ""
       }`}
-      onClick={() => setCurInbox(inbox)}
+      onClick={() => setCurrentInbox(inbox)}
     >
       <UserAvatar
         avatar={inbox.room.image!}

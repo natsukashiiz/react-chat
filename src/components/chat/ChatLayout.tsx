@@ -5,8 +5,7 @@ import ChatHeader from "./ChatHeader";
 
 interface ChatProps {
   contentRef: React.RefObject<HTMLDivElement>;
-  rooms: Map<number, Inbox>;
-  curInbox: Inbox | null;
+  currentInbox: Inbox | null;
   messages: Message[];
   profile: Profile | null;
   content: string;
@@ -16,8 +15,7 @@ interface ChatProps {
 }
 const ChatLayout = ({
   contentRef,
-  rooms,
-  curInbox,
+  currentInbox,
   messages,
   profile,
   content,
@@ -27,15 +25,13 @@ const ChatLayout = ({
 }: ChatProps) => {
   return (
     <div className="flex flex-col justify-between w-full h-full">
-      <ChatHeader curInbox={curInbox} />
+      <ChatHeader currentInbox={currentInbox} />
       <ChatContent
         contentRef={contentRef}
-        rooms={rooms}
         messages={messages}
         profile={profile}
-        curInbox={curInbox}
       />
-      {curInbox && (
+      {currentInbox && (
         <ChatBottom
           content={content}
           setContent={setContent}

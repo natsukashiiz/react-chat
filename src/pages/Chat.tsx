@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { getInboxes } from "@/api/inbox";
 import {
   ResizableHandle,
@@ -11,61 +13,75 @@ import { MessageType } from "@/types/enum";
 import useAuthStore from "@/stores/auth";
 import InboxLayout from "@/components/inbox/InboxLayout";
 import ChatLayout from "@/components/chat/ChatLayout";
-import Stomp from "stompjs";
+import { over, type Client } from "stompjs";
 import SockJS from "sockjs-client";
 
+let stompClient: Client | null = null;
 const Chat = () => {
   const { profile, clearAuth, token } = useAuthStore();
 
-  const [rooms, setRooms] = useState<Map<number, Inbox>>(new Map());
+  const stompClientRef = useRef<Client | null>(null);
   const [inboxes, setInboxes] = useState<Inbox[]>([]);
-  const [curInbox, setCurInbox] = useState<Inbox | null>(null);
+  const [currentInbox, setCurrentInbox] = useState<Inbox | null>(null);
+  const [newMessage, setNewMessage] = useState<Message | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState<string>("");
   const [pagination, setPagination] = useState({ page: 1, size: 30, total: 0 });
-  const [stompClient, setStompClient] = useState<Stomp.Client | null>(null);
-
-  const [websocketConnected, setWebsocketConnected] = useState<boolean>(false);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (websocketConnected) return;
-    setWebsocketConnected(true);
+    if (token && !stompClientRef.current) {
+      const socket = new SockJS("http://localhost:8080/ws");
+      stompClient = over(socket);
+      stompClientRef.current = stompClient;
 
-    let client: Stomp.Client | null = null;
-
-    if (token && stompClient === null) {
-      const socket = new SockJS("http://192.168.1.99:8080/ws");
-      client = Stomp.over(socket);
-
-      client.connect(
+      stompClient.connect(
         { Authorization: `Bearer ${token.accessToken}` },
-        function (frame) {
-          console.log("Connected: " + frame);
-          setStompClient(client);
-
-          if (!client) return;
-
-          client?.subscribe("/user/topic/messages", function (message) {
-            const newMessage = JSON.parse(message.body) as Message;
-            handleReceiveMessage(newMessage);
-          });
+        () => {
+          stompClientRef.current?.subscribe(
+            "/user/topic/messages",
+            (message) => {
+              const newMessage = JSON.parse(message.body);
+              setNewMessage(newMessage);
+            }
+          );
         },
-        function (error) {
-          console.error("Connection failed: " + error);
+        (error) => {
+          console.error(error);
         }
       );
     }
 
     return () => {
-      if (client && client.connected) {
-        client.disconnect(() => {
+      if (stompClientRef.current && stompClientRef.current.connected) {
+        stompClientRef.current.disconnect(() => {
           console.log("Stomp client disconnected");
         });
+        stompClientRef.current = null;
       }
     };
-  }, [token, stompClient]);
+  }, [token]);
+
+  useEffect(() => {
+    if (newMessage) {
+      if (currentInbox && currentInbox.room.id === newMessage.room.id) {
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      } else {
+        const newInboxes = inboxes.map((inbox) => {
+          if (inbox.room.id === newMessage.room.id) {
+            return {
+              ...inbox,
+              lastMessage: newMessage,
+              unreadCount: inbox.unreadCount + 1,
+            };
+          }
+          return inbox;
+        });
+        setInboxes(newInboxes);
+      }
+    }
+  }, [newMessage]);
 
   useEffect(() => {
     if (messagesContainerRef.current) {
@@ -79,13 +95,7 @@ const Chat = () => {
       try {
         const res = await getInboxes();
         if (res.status === 200 && res.data) {
-          setInboxes([...res.data.data]);
-
-          for (const inbox of res.data.data) {
-            setRooms((prevRoom) => {
-              return new Map(prevRoom.set(inbox.room.id, inbox));
-            });
-          }
+          setInboxes(res.data.data);
         }
       } catch (error) {
         console.error(error);
@@ -95,16 +105,15 @@ const Chat = () => {
   }, []);
 
   useEffect(() => {
-    if (curInbox) {
-      console.log("ROOM INFO", rooms.get(curInbox.room.id));
+    if (currentInbox) {
       const loadMessages = async () => {
         try {
-          const res = await getMessages(curInbox.room.id, {
+          const res = await getMessages(currentInbox.room.id, {
             page: pagination.page,
             size: pagination.size,
           });
           if (res.status === 200 && res.data) {
-            setMessages([...res.data.data.messages.reverse()]);
+            setMessages(res.data.data.messages.reverse());
 
             setPagination({
               ...pagination,
@@ -113,7 +122,7 @@ const Chat = () => {
 
             // update inbox unread count
             const newInboxes = inboxes.map((inbox) => {
-              if (inbox.id === curInbox.id) {
+              if (inbox.id === currentInbox.id) {
                 return {
                   ...inbox,
                   unreadCount: 0,
@@ -129,26 +138,22 @@ const Chat = () => {
       };
       loadMessages();
     }
-  }, [curInbox]);
-
-  useEffect(() => {
-    console.log("messages", messages);
-  }, [messages]);
+  }, [currentInbox]);
 
   const handleSendMessage = async () => {
-    if (curInbox) {
+    if (currentInbox && content.trim() !== "") {
       try {
-        const res = await sendMessage(curInbox.room.id, {
+        const res = await sendMessage(currentInbox.room.id, {
           type: MessageType.Text,
           content,
         });
         if (res.status === 200 && res.data) {
-          setMessages([...messages, res.data.data]);
+          setMessages((prevMessages) => [...prevMessages, res.data.data]);
           setContent("");
 
-          // update inbox last message
+          //   update inbox last message
           const newInboxes = inboxes.map((inbox) => {
-            if (inbox.id === curInbox.id) {
+            if (inbox.id === currentInbox.id) {
               return {
                 ...inbox,
                 lastMessage: res.data.data,
@@ -161,15 +166,6 @@ const Chat = () => {
       } catch (error) {
         console.error(error);
       }
-    }
-  };
-
-  const handleReceiveMessage = (message: Message) => {
-    if (rooms.get(message.room.id)) {
-      rooms.get(message.room.id)?.room.messages.push(message);
-      setRooms(new Map(rooms));
-    } else {
-      console.log("Handle receive message", message);
     }
   };
 
@@ -192,9 +188,9 @@ const Chat = () => {
       >
         <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
           <InboxLayout
-            rooms={rooms}
-            curInbox={curInbox}
-            setCurInbox={setCurInbox}
+            inboxes={inboxes}
+            currentInbox={currentInbox}
+            setCurrentInbox={setCurrentInbox}
             profile={profile}
             handleLogout={handleLogout}
           />
@@ -203,8 +199,7 @@ const Chat = () => {
         <ResizablePanel defaultSize={70}>
           <ChatLayout
             contentRef={messagesContainerRef}
-            rooms={rooms}
-            curInbox={curInbox}
+            currentInbox={currentInbox}
             messages={messages}
             profile={profile}
             content={content}
