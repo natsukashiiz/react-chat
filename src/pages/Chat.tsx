@@ -7,32 +7,35 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { useEffect, useRef, useState } from "react";
-import type { Inbox, Message } from "@/types/api";
-import { getMessages, sendMessage } from "@/api/message";
-import { MessageType } from "@/types/enum";
+import type { Message } from "@/types/api";
+import { getMessages } from "@/api/message";
+import { MessageAction, MessageType } from "@/types/enum";
 import useAuthStore from "@/stores/auth";
 import InboxLayout from "@/components/inbox/InboxLayout";
 import ChatLayout from "@/components/chat/ChatLayout";
 import { over, type Client } from "stompjs";
 import SockJS from "sockjs-client";
+import useChatStore from "@/stores/chat";
 
 let stompClient: Client | null = null;
 const Chat = () => {
-  const { profile, clearAuth, token } = useAuthStore();
+  const { token } = useAuthStore();
+  const {
+    inboxList,
+    currentInbox,
+    updateInbox,
+    setMessageBody,
+    setMessageList,
+    addMessage,
+  } = useChatStore();
 
   const stompClientRef = useRef<Client | null>(null);
-  const [inboxes, setInboxes] = useState<Inbox[]>([]);
-  const [currentInbox, setCurrentInbox] = useState<Inbox | null>(null);
   const [newMessage, setNewMessage] = useState<Message | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [content, setContent] = useState<string>("");
   const [pagination, setPagination] = useState({ page: 1, size: 30, total: 0 });
-
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (token && !stompClientRef.current) {
-      const socket = new SockJS("http://localhost:8080/ws");
+      const socket = new SockJS("http://192.168.1.99:8080/ws");
       stompClient = over(socket);
       stompClientRef.current = stompClient;
 
@@ -65,44 +68,28 @@ const Chat = () => {
 
   useEffect(() => {
     if (newMessage) {
+      let upUnreadCount = 1;
       if (currentInbox && currentInbox.room.id === newMessage.room.id) {
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
-      } else {
-        const newInboxes = inboxes.map((inbox) => {
-          if (inbox.room.id === newMessage.room.id) {
-            return {
-              ...inbox,
-              lastMessage: newMessage,
-              unreadCount: inbox.unreadCount + 1,
-            };
-          }
-          return inbox;
-        });
-        setInboxes(newInboxes);
+        addMessage(newMessage);
+        upUnreadCount = 0;
       }
+      const newInbox = inboxList.map((inbox) => {
+        if (inbox.room.id === newMessage.room.id) {
+          return {
+            ...inbox,
+            lastMessage: newMessage,
+            unreadCount: inbox.unreadCount + upUnreadCount,
+          };
+        }
+        return inbox;
+      });
+
+      if (newInbox)
+        updateInbox(
+          newInbox.find((inbox) => inbox.room.id === newMessage.room.id)!
+        );
     }
   }, [newMessage]);
-
-  useEffect(() => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop =
-        messagesContainerRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  useEffect(() => {
-    const loadInboxes = async () => {
-      try {
-        const res = await getInboxes();
-        if (res.status === 200 && res.data) {
-          setInboxes(res.data.data);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    loadInboxes();
-  }, []);
 
   useEffect(() => {
     if (currentInbox) {
@@ -113,7 +100,13 @@ const Chat = () => {
             size: pagination.size,
           });
           if (res.status === 200 && res.data) {
-            setMessages(res.data.data.messages.reverse());
+            setMessageList(res.data.data.messages.reverse());
+
+            setMessageBody({
+              action: MessageAction.SendMessage,
+              type: MessageType.Text,
+              content: "",
+            });
 
             setPagination({
               ...pagination,
@@ -121,16 +114,16 @@ const Chat = () => {
             });
 
             // update inbox unread count
-            const newInboxes = inboxes.map((inbox) => {
-              if (inbox.id === currentInbox.id) {
-                return {
-                  ...inbox,
-                  unreadCount: 0,
-                };
-              }
-              return inbox;
-            });
-            setInboxes(newInboxes);
+            // const newInboxes = inboxes.map((inbox) => {
+            //   if (inbox.id === currentInbox.id) {
+            //     return {
+            //       ...inbox,
+            //       unreadCount: 0,
+            //     };
+            //   }
+            //   return inbox;
+            // });
+            // setInboxes(newInboxes);
           }
         } catch (error) {
           console.error(error);
@@ -140,46 +133,6 @@ const Chat = () => {
     }
   }, [currentInbox]);
 
-  const handleSendMessage = async () => {
-    if (currentInbox && content.trim() !== "") {
-      try {
-        const res = await sendMessage(currentInbox.room.id, {
-          type: MessageType.Text,
-          content,
-        });
-        if (res.status === 200 && res.data) {
-          setMessages((prevMessages) => [...prevMessages, res.data.data]);
-          setContent("");
-
-          //   update inbox last message
-          const newInboxes = inboxes.map((inbox) => {
-            if (inbox.id === currentInbox.id) {
-              return {
-                ...inbox,
-                lastMessage: res.data.data,
-              };
-            }
-            return inbox;
-          });
-          setInboxes(newInboxes);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSendMessage();
-    }
-  };
-
-  const handleLogout = () => {
-    clearAuth();
-    window.location.href = "/login";
-  };
-
   return (
     <div className="h-dvh">
       <ResizablePanelGroup
@@ -187,26 +140,11 @@ const Chat = () => {
         className="h-full w-full border"
       >
         <ResizablePanel defaultSize={30} minSize={25} maxSize={50}>
-          <InboxLayout
-            inboxes={inboxes}
-            currentInbox={currentInbox}
-            setCurrentInbox={setCurrentInbox}
-            profile={profile}
-            handleLogout={handleLogout}
-          />
+          <InboxLayout />
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={70}>
-          <ChatLayout
-            contentRef={messagesContainerRef}
-            currentInbox={currentInbox}
-            messages={messages}
-            profile={profile}
-            content={content}
-            setContent={setContent}
-            handleSendMessage={handleSendMessage}
-            handleKeyPress={handleKeyPress}
-          />
+          <ChatLayout />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

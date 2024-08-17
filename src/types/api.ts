@@ -118,8 +118,10 @@ export interface UpdateGroupNameBody {
 }
 
 export interface SendMessageBody {
+  action: MessageAction;
   type: MessageType;
   content: string;
+  replyTo?: Message;
 }
 export interface ReplyMessageBody {
   type: MessageType;
@@ -130,4 +132,12 @@ export interface ReplyMessageBody {
 export interface Friend {
   friend: Profile;
   status: FriendStatus;
+}
+
+export interface FileUpload {
+  name: string;
+  url: string;
+  type: string;
+  format: string;
+  size: number;
 }

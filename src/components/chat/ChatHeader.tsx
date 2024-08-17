@@ -1,11 +1,9 @@
-import { Inbox } from "@/types/api";
 import { RoomType } from "@/types/enum";
 import { Button } from "../ui/button";
+import useChatStore from "@/stores/chat";
 
-interface ChatHeaderProps {
-  currentInbox: Inbox | null;
-}
-const ChatHeader = ({ currentInbox }: ChatHeaderProps) => {
+const ChatHeader = () => {
+  const { currentInbox } = useChatStore();
   return (
     <div className="w-full h-20 px-4 flex justify-between items-center border-b">
       <div className="flex flex-col space-y-1">

@@ -1,19 +1,25 @@
-import { Message, Profile } from "@/types/api";
+import useChatStore from "@/stores/chat";
 import ChatMessage from "./ChatMessage";
+import { useEffect, useRef } from "react";
 
-interface ChatContentProps {
-  contentRef: React.RefObject<HTMLDivElement>;
-  messages: Message[];
-  profile: Profile | null;
-}
-const ChatContent = ({ contentRef, messages, profile }: ChatContentProps) => {
+const ChatContent = () => {
+  const { messageList } = useChatStore();
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [messageList]);
+
   return (
     <div
-      ref={contentRef}
+      ref={chatContainerRef}
       className="w-full overflow-y-auto overflow-x-hidden h-full flex flex-col px-2"
     >
-      {messages.map((message) => (
-        <ChatMessage key={message.id} message={message} profile={profile} />
+      {messageList.map((message) => (
+        <ChatMessage key={message.id} message={message} />
       ))}
     </div>
   );

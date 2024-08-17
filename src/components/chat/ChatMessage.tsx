@@ -1,112 +1,104 @@
-import { Message, Profile } from "@/types/api";
-import { MessageAction, MessageType } from "@/types/enum";
-import { Badge } from "../ui/badge";
+import { Message } from "@/types/api";
+import { MessageAction } from "@/types/enum";
 import UserAvatar from "../UserAvatar";
-
-const ChatMessageAction = ({ sender, action, content, mention }: Message) => {
-  return (
-    <div
-      className={`flex items-center justify-center space-x-2 my-1 w-full p-2`}
-    >
-      <Badge variant="outline">
-        {action === MessageAction.CreateGroupChat ? (
-          <span>{`${sender.nickname} created group chat`}</span>
-        ) : action === MessageAction.RenameGroupChat ? (
-          <span>{`${sender.nickname} renamed group chat to "${content}"`}</span>
-        ) : action === MessageAction.ChangeGroupChatPhoto ? (
-          <span>{`${sender.nickname} changed group chat photo`}</span>
-        ) : action === MessageAction.RemoveGroupMember ? (
-          <span>{`${sender.nickname} removed ${mention.nickname}`}</span>
-        ) : action === MessageAction.AddGroupMember ? (
-          <span>{`${sender.nickname} added ${mention.nickname}`}</span>
-        ) : action === MessageAction.LeaveChat ? (
-          <span>{`${sender.nickname} left the chat`}</span>
-        ) : action === MessageAction.JoinChat ? (
-          <span>{`${sender.nickname} joined the chat`}</span>
-        ) : (
-          <span>({action})</span>
-        )}
-      </Badge>
-    </div>
-  );
-};
-
-const ChatMessageContent = ({ content, type }: Message) => {
-  return (
-    <div className={`${type === MessageType.Text ? "p-3" : "p-0"}`}>
-      {type === MessageType.Text ? (
-        <span>{content}</span>
-      ) : type === MessageType.Image ? (
-        <img src={content} alt="image" className="w-40 h-40 object-cover" />
-      ) : type === MessageType.Audio ? (
-        <audio controls>
-          <source src={content} type="audio/mp3" />
-        </audio>
-      ) : type === MessageType.Video ? (
-        <video controls>
-          <source src={content} type="video/mp4" />
-        </video>
-      ) : type === MessageType.File ? (
-        <a href={content} download>
-          Download File
-        </a>
-      ) : (
-        <span>({type})</span>
-      )}
-    </div>
-  );
-};
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import ChatMessageBox from "./ChatMessageBox";
+import ChatMessageAction from "./ChatMessageAction";
+import useAuthStore from "@/stores/auth";
+import useChatStore from "@/stores/chat";
 
 interface ChatMessageProps {
   message: Message;
-  profile: Profile | null;
 }
-const ChatMessage = ({ message, profile }: ChatMessageProps) => {
+const ChatMessage = ({ message }: ChatMessageProps) => {
+  const { profile } = useAuthStore();
+  const { setMessageBody } = useChatStore();
+
+  const isMe = message.sender.id === profile?.id;
+
+  const handleReplyMessage = () => {
+    setMessageBody({
+      action: MessageAction.ReplyMessage,
+      type: message.type,
+      content: "",
+      replyTo: message,
+    });
+  };
+
   return message.action === MessageAction.SendMessage ? (
     <div
       key={message.id}
-      className={`flex items-center space-x-2 my-1 w-full p-2 rounded-lg ${
-        message.sender.id === profile?.id ? "justify-end" : ""
+      className={`flex items-center space-x-2 my-2 w-full rounded-lg animate-slide-in ${
+        isMe ? "justify-end" : ""
       }`}
     >
-      {message.sender.id !== profile?.id && (
+      {!isMe && (
         <UserAvatar
           avatar={message.sender.avatar}
           name={message.sender.nickname}
           className="w-10 h-10 rounded-full"
         />
       )}
-      <div className="bg-accent rounded-md max-w-xs">
-        <ChatMessageContent {...message} />
-      </div>
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <ChatMessageBox
+            {...message}
+            isMe={isMe}
+            handleReplyMessage={handleReplyMessage}
+          />
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onClick={handleReplyMessage}>Reply</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </div>
   ) : message.action === MessageAction.ReplyMessage ? (
     <div
       key={message.id}
-      className={`flex items-center space-x-2 my-1 w-full p-2 rounded-lg ${
-        message.sender.id === profile?.id ? "justify-end" : ""
+      className={`flex items-center space-x-2 my-2 w-full rounded-lg animate-slide-in ${
+        isMe ? "justify-end" : ""
       }`}
     >
-      {message.sender.id !== profile?.id && (
+      {!isMe && (
         <UserAvatar
           avatar={message.sender.avatar}
           name={message.sender.nickname}
           className="w-10 h-10 rounded-full"
         />
       )}
-      <div className="flex flex-col space-y-1">
-        <span className="text-xs">Reply message</span>
-        <div className="bg-blue-100 p-3 rounded-md max-w-xs">
-          {message.replyTo.action === MessageAction.SendMessage ? (
-            <div>{message.replyTo.content}</div>
-          ) : (
-            <ChatMessageAction {...message} />
-          )}
-        </div>
-        <div className="bg-accent p-3 rounded-md max-w-xs">
-          <div>{message.content}</div>
-        </div>
-      </div>
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <div className="flex flex-col space-y-1">
+            <span className="text-xs">Reply message</span>
+            <div>
+              {message.replyTo.action === MessageAction.SendMessage ||
+              message.replyTo.action === MessageAction.ReplyMessage ? (
+                <ChatMessageBox
+                  {...message.replyTo}
+                  isMe={isMe}
+                  bgColor="bg-blue-200"
+                  handleReplyMessage={handleReplyMessage}
+                />
+              ) : (
+                <ChatMessageAction {...message} />
+              )}
+            </div>
+            <ChatMessageBox
+              {...message}
+              isMe={isMe}
+              handleReplyMessage={handleReplyMessage}
+            />
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onClick={handleReplyMessage}>Reply</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </div>
   ) : (
     <ChatMessageAction {...message} />

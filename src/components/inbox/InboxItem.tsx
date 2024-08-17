@@ -1,24 +1,22 @@
 import { Inbox } from "@/types/api";
 import UserAvatar from "../UserAvatar";
+import { MessageType } from "@/types/enum";
+import useChatStore from "@/stores/chat";
 
 interface InboxItemProps {
   inbox: Inbox;
-  currentInbox: Inbox | null;
-  setCurrentInbox: (inbox: Inbox) => void;
 }
-const InboxItem = ({
-  inbox,
-  currentInbox,
-  setCurrentInbox,
-}: InboxItemProps) => {
+const InboxItem = ({ inbox }: InboxItemProps) => {
+  const { currentInbox, setCurrentInbox } = useChatStore();
+
   return (
     <div
       key={inbox.id}
-      className={`flex items-center space-x-2 my-1 w-full p-2 hover:bg-accent rounded-lg cursor-pointer ${
+      className={`flex items-center space-x-2 my-1 w-full p-2 hover:bg-accent rounded-lg cursor-pointer transition-all duration-300 ${
         inbox.room.id === currentInbox?.room.id
-          ? "bg-accent"
+          ? "border-[1.9px] border-blue-500"
           : inbox.unreadCount > 0
-          ? "bg-rose-100"
+          ? "bg-accent"
           : ""
       }`}
       onClick={() => setCurrentInbox(inbox)}
@@ -35,11 +33,24 @@ const InboxItem = ({
             `(${inbox.unreadCount > 99 ? "99+" : inbox.unreadCount})`}
         </div>
         {inbox.lastMessage ? (
-          <div className="truncate text-ellipsis w-72">
-            {inbox.lastMessage.content}
+          <div className="flex space-x-1 w-full">
+            <span>{inbox.lastMessage.sender.nickname}:</span>
+            <span className="text-gray-500 line-clamp-1">
+              {inbox.lastMessage.type === MessageType.Text
+                ? inbox.lastMessage.content
+                : inbox.lastMessage.type === MessageType.Image
+                ? "Send Image"
+                : inbox.lastMessage.type === MessageType.File
+                ? "Send File"
+                : inbox.lastMessage.type === MessageType.Audio
+                ? "Send Audio"
+                : inbox.lastMessage.type === MessageType.Video
+                ? "Send Video"
+                : "???"}
+            </span>
           </div>
         ) : (
-          <div>No messages</div>
+          <span className="text-gray-500">No messages</span>
         )}
       </div>
     </div>

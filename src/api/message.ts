@@ -4,6 +4,7 @@ import type {
   SendMessageBody,
   Message,
   Pagination,
+  ReplyMessageBody,
 } from "@/types/api";
 import client from "@/api/request";
 
@@ -19,4 +20,11 @@ export const sendMessage = (
   body: SendMessageBody
 ): ServerResponse<Message> => {
   return client.post(`/v1/messages/${roomId}/send`, body);
+};
+
+export const replyMessage = (
+  roomId: number,
+  body: ReplyMessageBody
+): ServerResponse<Message> => {
+  return client.post(`/v1/messages/${roomId}/reply`, body);
 };
