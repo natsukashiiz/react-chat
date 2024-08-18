@@ -1,4 +1,4 @@
-import { MessageType } from "@/types/enum";
+import { MessageAction, MessageType } from "@/types/enum";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import {
   ContextMenu,
@@ -6,9 +6,10 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { ReplyIcon } from "lucide-react";
+import { ReplyIcon, FileIcon } from "lucide-react";
 
 interface ChatMessageBoxProps {
+  action: MessageAction;
   type: MessageType;
   content: string;
   isMe: boolean;
@@ -16,6 +17,7 @@ interface ChatMessageBoxProps {
   handleReplyMessage: () => void;
 }
 const ChatMessageBox = ({
+  action,
   type,
   content,
   isMe,
@@ -44,11 +46,7 @@ const ChatMessageBox = ({
             ) : type === MessageType.Image ? (
               <PhotoProvider>
                 <PhotoView src={content}>
-                  <img
-                    src={content}
-                    alt="image"
-                    className="w-40 h-40 object-cover"
-                  />
+                  <img src={content} alt="image" />
                 </PhotoView>
               </PhotoProvider>
             ) : type === MessageType.Audio ? (
@@ -60,8 +58,8 @@ const ChatMessageBox = ({
                 <source src={content} type="video/mp4" />
               </video>
             ) : type === MessageType.File ? (
-              <a href={content} download>
-                Download File
+              <a href={content} download target="_blank">
+                <FileIcon className="w-10 h-10" />
               </a>
             ) : (
               <span>({type})</span>

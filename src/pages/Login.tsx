@@ -46,7 +46,7 @@ const Login = () => {
       const res = await login(values);
       if (res.status === 200 && res.data) {
         setToken(res.data.data);
-        navigate("/chat");
+        navigate("/chat", { replace: true });
       }
     } catch (error) {
       console.error(error);

@@ -22,9 +22,17 @@ const InboxContent = () => {
 
   return (
     <div className="flex flex-col h-full items-center p-6 w-full overflow-y-auto overflow-x-hidden">
-      {inboxList.map((inbox) => (
-        <InboxItem key={inbox.id} inbox={inbox} />
-      ))}
+      {inboxList
+        .sort((a, b) => {
+          if (a.id && b.id) {
+            return b.id - a.id;
+          }
+
+          return 0;
+        })
+        .map((inbox) => (
+          <InboxItem key={inbox.id} inbox={inbox} />
+        ))}
     </div>
   );
 };

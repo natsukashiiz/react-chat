@@ -1,7 +1,6 @@
 import {
   acceptFriend,
   addFriend,
-  getFriends,
   rejectFriend,
   searchFriend,
 } from "@/api/friend";
@@ -11,32 +10,19 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import UserAvatar from "@/components/UserAvatar";
 import useAuthStore from "@/stores/auth";
+import useFriendStore from "@/stores/friend";
 import { Friend } from "@/types/api";
-import { FriendStatus } from "@/types/enum";
 import { AxiosError } from "axios";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const Friends = () => {
   const { profile } = useAuthStore();
-  const [friends, setFriends] = useState<Friend[]>([]);
+  const { friendList, removeFriendList } = useFriendStore();
+
   const [friend, setFriend] = useState<Friend | null>(null);
   const [keyword, setKeyword] = useState<string>("");
   const [searching, setSearching] = useState<boolean>(false);
   const [notFound, setNotFound] = useState<boolean>(false);
-
-  useEffect(() => {
-    const loadFriends = async () => {
-      try {
-        const res = await getFriends(FriendStatus.Apply);
-        if (res.status === 200 && res.data) {
-          setFriends([...res.data.data]);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    loadFriends();
-  }, []);
 
   const handleSearchFriend = async (keyword: string) => {
     setNotFound(false);
@@ -74,7 +60,7 @@ const Friends = () => {
     try {
       const res = await acceptFriend(friendId);
       if (res.status === 200 && res.data) {
-        setFriends(friends.filter((friend) => friend.friend.id !== friendId));
+        removeFriendList(friendId);
       }
     } catch (error) {
       console.error(error);
@@ -85,7 +71,7 @@ const Friends = () => {
     try {
       const res = await rejectFriend(friendId);
       if (res.status === 200 && res.data) {
-        setFriends(friends.filter((friend) => friend.friend.id !== friendId));
+        removeFriendList(friendId);
       }
     } catch (error) {
       console.error(error);
@@ -134,47 +120,49 @@ const Friends = () => {
       </Card>
       <Card>
         <CardHeader>
-          Friends Request ({friends.length > 99 ? "99+" : friends.length})
+          Friends Request ({friendList.length > 99 ? "99+" : friendList.length})
         </CardHeader>
         <CardContent>
           <div className="flex flex-col h-full items-center justify-center p-6">
-            {friends.length > 0 ? (
-              friends.map((friend) => (
-                <div
-                  key={friend.friend.id}
-                  className="w-full flex items-center justify-between space-x-4"
-                >
-                  <div className="flex space-x-4">
-                    <UserAvatar
-                      avatar={friend.friend.avatar}
-                      name={friend.friend.nickname}
-                    />
-                    <div>
-                      <div className="font-semibold">
-                        {friend.friend.username}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {friend.friend.mobile}
+            {friendList.length > 0 ? (
+              friendList
+                .sort((a, b) => b.friend.id - a.friend.id)
+                .map((friend) => (
+                  <div
+                    key={friend.friend.id}
+                    className="w-full flex items-center justify-between space-x-4"
+                  >
+                    <div className="flex space-x-4">
+                      <UserAvatar
+                        avatar={friend.friend.avatar}
+                        name={friend.friend.nickname}
+                      />
+                      <div>
+                        <div className="font-semibold">
+                          {friend.friend.username}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {friend.friend.mobile}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        size={"sm"}
+                        onClick={() => handleAcceptFriend(friend.friend.id)}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        size={"sm"}
+                        variant={"outline"}
+                        onClick={() => handleRejectFriend(friend.friend.id)}
+                      >
+                        Reject
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      size={"sm"}
-                      onClick={() => handleAcceptFriend(friend.friend.id)}
-                    >
-                      Accept
-                    </Button>
-                    <Button
-                      size={"sm"}
-                      variant={"outline"}
-                      onClick={() => handleRejectFriend(friend.friend.id)}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              ))
+                ))
             ) : (
               <div className="text-center">Empty friends</div>
             )}

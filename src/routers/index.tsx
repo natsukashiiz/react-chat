@@ -6,6 +6,7 @@ import SignUp from "@/pages/SignUp";
 import Chat from "@/pages/Chat";
 import Friends from "@/pages/Friends";
 import AuthProvider from "@/providers/AuthProvider";
+import MainLayout from "@/layouts/MainLayout";
 
 const routers = createBrowserRouter([
   {
@@ -22,7 +23,7 @@ const routers = createBrowserRouter([
   },
   {
     path: "/",
-    element: <AuthProvider />,
+    element: <MainLayout />,
     children: [
       {
         path: "/chat",

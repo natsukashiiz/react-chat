@@ -1,5 +1,5 @@
 import { Message } from "@/types/api";
-import { MessageAction } from "@/types/enum";
+import { MessageAction, MessageType } from "@/types/enum";
 import UserAvatar from "../UserAvatar";
 import {
   ContextMenu,
@@ -24,7 +24,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
   const handleReplyMessage = () => {
     setMessageBody({
       action: MessageAction.ReplyMessage,
-      type: message.type,
+      type: MessageType.Text,
       content: "",
       replyTo: message,
     });
