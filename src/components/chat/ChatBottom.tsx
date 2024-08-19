@@ -23,6 +23,7 @@ const ChatBottom = () => {
     clearMessageBody,
     messageList,
     setMessageList,
+    setTyping,
   } = useChatStore();
 
   const [sending, setSending] = useState(false);
@@ -102,11 +103,11 @@ const ChatBottom = () => {
   };
 
   const detectMessageType = (content: string) => {
-    if (content.match(/\.(jpeg|jpg|gif|png)$/) !== null) {
+    if (content.match(/\.(jpeg|jpg|gif|png|webp)$/) !== null) {
       return MessageType.Image;
-    } else if (content.match(/\.(mp3|wav|ogg|flac)$/) !== null) {
+    } else if (content.match(/\.(mp3)$/) !== null) {
       return MessageType.Audio;
-    } else if (content.match(/\.(mp4|webm|ogg|flv)$/) !== null) {
+    } else if (content.match(/\.(mp4)$/) !== null) {
       return MessageType.Video;
     } else {
       return MessageType.File;
@@ -131,6 +132,15 @@ const ChatBottom = () => {
       } catch (error) {
         console.error(error);
       }
+    }
+  };
+
+  const handleTyping = () => {
+    if (currentInbox) {
+      setTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+      }, 3000);
     }
   };
 
@@ -224,9 +234,10 @@ const ChatBottom = () => {
             value={
               messageBody.type === MessageType.Text ? messageBody.content : ""
             }
-            onChange={(e) =>
-              setMessageBody({ ...messageBody, content: e.target.value })
-            }
+            onChange={(e) => {
+              setMessageBody({ ...messageBody, content: e.target.value });
+              handleTyping();
+            }}
             onKeyUp={handleKeyPress}
             className={`w-full px-4 py-2 border rounded-lg focus-visible:ring-0 ${
               messageBody.replyTo && "border-t-0 rounded-t-none"

@@ -1,7 +1,8 @@
 import { Inbox } from "@/types/api";
 import UserAvatar from "../UserAvatar";
-import { MessageType } from "@/types/enum";
+import { MessageAction, MessageType } from "@/types/enum";
 import useChatStore from "@/stores/chat";
+import ChatMessageActionText from "../chat/ChatMessageActionText";
 
 interface InboxItemProps {
   inbox: Inbox;
@@ -12,7 +13,7 @@ const InboxItem = ({ inbox }: InboxItemProps) => {
   return (
     <div
       key={inbox.id}
-      className={`flex items-center space-x-2 my-1 w-full p-2 hover:bg-accent rounded-lg cursor-pointer transition-all duration-300 ${
+      className={`flex items-center gap-2 px-1 my-1 w-full hover:bg-accent rounded-lg cursor-pointer transition-all duration-300 ${
         inbox.room.id === currentInbox?.room.id
           ? "border-[1.9px] border-blue-500"
           : inbox.unreadCount > 0
@@ -24,7 +25,7 @@ const InboxItem = ({ inbox }: InboxItemProps) => {
       <UserAvatar
         avatar={inbox.room.image!}
         name={inbox.room.name!}
-        className="w-10 h-10 rounded-full"
+        className="w-14 h-14 rounded-full"
       />
       <div>
         <div className="font-semibold">
@@ -33,20 +34,29 @@ const InboxItem = ({ inbox }: InboxItemProps) => {
             `(${inbox.unreadCount > 99 ? "99+" : inbox.unreadCount})`}
         </div>
         {inbox.lastMessage ? (
-          <div className="flex space-x-1 w-full">
-            <span>{inbox.lastMessage.sender.nickname}:</span>
+          <div className="flex flex-col w-full">
             <span className="text-gray-500 line-clamp-1">
-              {inbox.lastMessage.type === MessageType.Text
-                ? inbox.lastMessage.content
-                : inbox.lastMessage.type === MessageType.Image
-                ? "Send Image"
-                : inbox.lastMessage.type === MessageType.File
-                ? "Send File"
-                : inbox.lastMessage.type === MessageType.Audio
-                ? "Send Audio"
-                : inbox.lastMessage.type === MessageType.Video
-                ? "Send Video"
-                : "???"}
+              {inbox.lastMessage.sender.nickname}:
+            </span>
+            <span className="text-gray-500 line-clamp-1">
+              {inbox.lastMessage.action === MessageAction.SendMessage ||
+              inbox.lastMessage.action === MessageAction.ReplyMessage ? (
+                inbox.lastMessage.type === MessageType.Text ? (
+                  inbox.lastMessage.content
+                ) : inbox.lastMessage.type === MessageType.Image ? (
+                  "Send Image"
+                ) : inbox.lastMessage.type === MessageType.File ? (
+                  "Send File"
+                ) : inbox.lastMessage.type === MessageType.Audio ? (
+                  "Send Audio"
+                ) : inbox.lastMessage.type === MessageType.Video ? (
+                  "Send Video"
+                ) : (
+                  "???"
+                )
+              ) : (
+                <ChatMessageActionText {...inbox.lastMessage} />
+              )}
             </span>
           </div>
         ) : (

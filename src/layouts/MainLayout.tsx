@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
 import { useEffect, useRef, useState } from "react";
-import type { Friend, Message } from "@/types/api";
+import type { Friend, Message, TypingMessage } from "@/types/api";
 import useAuthStore from "@/stores/auth";
 import { over, type Client } from "stompjs";
 import SockJS from "sockjs-client";
@@ -16,8 +16,16 @@ import { toast } from "sonner";
 let stompClient: Client | null = null;
 const MainLayout = () => {
   const { token, authenticated } = useAuthStore();
-  const { inboxList, currentInbox, updateInbox, addMessage, setCurrentInbox } =
-    useChatStore();
+  const {
+    inboxList,
+    currentInbox,
+    updateInbox,
+    addMessage,
+    setCurrentInbox,
+    typing,
+    setTypingMessage,
+    clearTypingMessage,
+  } = useChatStore();
   const { setFriendList, addFriendList } = useFriendStore();
 
   const stompClientRef = useRef<Client | null>(null);
@@ -43,7 +51,7 @@ const MainLayout = () => {
 
   useEffect(() => {
     if (token && !stompClientRef.current) {
-      const socket = new SockJS("http://localhost:8080/ws");
+      const socket = new SockJS("http://192.168.1.99:8080/ws");
       stompClient = over(socket);
       stompClientRef.current = stompClient;
 
@@ -73,6 +81,11 @@ const MainLayout = () => {
               addFriendList(friend);
             }
           );
+
+          stompClientRef.current?.subscribe("/user/topic/typing", (message) => {
+            const typing = JSON.parse(message.body) as TypingMessage;
+            setTypingMessage(typing);
+          });
         },
         (error) => {
           console.error(error);
@@ -91,11 +104,22 @@ const MainLayout = () => {
   }, [token]);
 
   useEffect(() => {
+    if (typing) {
+      stompClientRef.current?.send(
+        "/app/typing",
+        {},
+        JSON.stringify({ roomId: currentInbox?.room.id })
+      );
+    }
+  }, [typing]);
+
+  useEffect(() => {
     if (newMessage) {
       let upUnreadCount;
       if (currentInbox && currentInbox.room.id === newMessage.room.id) {
         addMessage(newMessage);
         upUnreadCount = 0;
+        clearTypingMessage();
       } else {
         upUnreadCount = 1;
         toast.message("You have a new message", {

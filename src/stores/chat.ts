@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Message, Inbox, SendMessageBody } from "@/types/api";
+import { Message, Inbox, SendMessageBody, TypingMessage } from "@/types/api";
 import { MessageAction, MessageType } from "@/types/enum";
 
 interface ChatState {
@@ -7,12 +7,17 @@ interface ChatState {
   currentInbox: Inbox | null;
   messageList: Message[];
   messageBody: SendMessageBody;
+  typing: boolean;
+  typingMessage: TypingMessage | null;
   setInboxList: (inboxes: Inbox[]) => void;
   updateInbox: (inbox: Inbox) => void;
   setCurrentInbox: (inbox: Inbox) => void;
   setMessageList: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
   setMessageBody: (body: SendMessageBody) => void;
+  setTyping: (typing: boolean) => void;
+  setTypingMessage: (typingMessage: TypingMessage) => void;
+  clearTypingMessage: () => void;
   clearMessageBody: () => void;
 }
 
@@ -25,6 +30,8 @@ const useChatStore = create<ChatState>((set) => ({
     type: MessageType.Text,
     content: "",
   },
+  typing: false,
+  typingMessage: null,
   setInboxList: (inboxes) => set({ inboxList: inboxes }),
   updateInbox: (inbox) => {
     set((state) => ({
@@ -39,6 +46,9 @@ const useChatStore = create<ChatState>((set) => ({
     set((state) => ({ messageList: [...state.messageList, message] }));
   },
   setMessageBody: (body) => set({ messageBody: body }),
+  setTyping: (typing) => set({ typing }),
+  setTypingMessage: (typingMessage) => set({ typingMessage }),
+  clearTypingMessage: () => set({ typingMessage: null }),
   clearMessageBody: () =>
     set({
       messageBody: {

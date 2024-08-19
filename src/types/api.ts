@@ -65,8 +65,8 @@ export interface Message {
   content: string;
   sender: Profile;
   room: Room;
-  mention: Profile;
-  replyTo: Message;
+  mention: Profile | null;
+  replyTo: Message | null;
   createdAt: Date;
 }
 
@@ -105,7 +105,7 @@ export interface GroupMember {
 
 export interface CreateGroupBody {
   name: string;
-  image: string;
+  image?: string;
   memberIds: number[];
 }
 
@@ -140,4 +140,9 @@ export interface FileUpload {
   type: string;
   format: string;
   size: number;
+}
+
+export interface TypingMessage {
+  roomId: number;
+  user: Profile;
 }

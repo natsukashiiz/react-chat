@@ -7,6 +7,7 @@ import Chat from "@/pages/Chat";
 import Friends from "@/pages/Friends";
 import AuthProvider from "@/providers/AuthProvider";
 import MainLayout from "@/layouts/MainLayout";
+import Groups from "@/pages/Groups";
 
 const routers = createBrowserRouter([
   {
@@ -28,6 +29,10 @@ const routers = createBrowserRouter([
       {
         path: "/chat",
         element: <Chat />,
+      },
+      {
+        path: "/groups",
+        element: <Groups />,
       },
       {
         path: "/friends",

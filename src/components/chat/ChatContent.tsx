@@ -3,8 +3,7 @@ import ChatMessage from "./ChatMessage";
 import { getMessages } from "@/api/message";
 import { MessageAction, MessageType } from "@/types/enum";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "../ui/button";
-import { ArrowBigDownIcon } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
 
 const ChatContent = () => {
   const {
@@ -13,6 +12,8 @@ const ChatContent = () => {
     setMessageList,
     currentInbox,
     updateInbox,
+    typingMessage,
+    clearTypingMessage,
   } = useChatStore();
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
   const [isTop, setIsTop] = useState(false);
@@ -28,7 +29,7 @@ const ChatContent = () => {
         chatContainerRef.current.scrollHeight -
         chatContainerRef.current.scrollTop;
 
-      if (scrollDiff > 1000) {
+      if (scrollDiff > 800) {
         setShowScrollToBottom(true);
       } else {
         setShowScrollToBottom(false);
@@ -178,6 +179,29 @@ const ChatContent = () => {
     }
   }, [isTop]);
 
+  useEffect(() => {
+    if (
+      currentInbox &&
+      typingMessage &&
+      currentInbox.room.id === typingMessage.roomId
+    ) {
+      if (
+        chatContainerRef.current &&
+        chatContainerRef.current.scrollTop +
+          chatContainerRef.current.clientHeight >=
+          chatContainerRef.current.scrollHeight - 100
+      ) {
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
+      }
+
+      setTimeout(() => {
+        clearTypingMessage();
+      }, 2000);
+    }
+  }, [typingMessage]);
+
   return (
     currentInbox && (
       <>
@@ -185,22 +209,41 @@ const ChatContent = () => {
           ref={chatContainerRef}
           onScroll={handleScroll}
           className="w-full overflow-y-auto overflow-x-hidden h-full flex flex-col px-4"
+          style={{
+            backgroundImage: "url('/chat-bg.webp')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
         >
           {isLoading && <span className="text-center pt-5">Loading...</span>}
           {messageList.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}
+          {currentInbox &&
+            typingMessage &&
+            currentInbox.room.id === typingMessage.roomId && (
+              <ChatMessage
+                message={{
+                  id: 0,
+                  action: MessageAction.SendMessage,
+                  type: MessageType.Text,
+                  content: "Typing...",
+                  sender: typingMessage.user,
+                  createdAt: new Date(),
+                  room: currentInbox.room,
+                  mention: null,
+                  replyTo: null,
+                }}
+              />
+            )}
         </div>
         {showScrollToBottom && (
-          <Button
-            className="absolute bottom-20 right-6 animate-slide-in"
+          <div
+            className="absolute bottom-20 right-6 animate-slide-in cursor-pointer bg-white shadow-xl rounded-full h-10 w-10"
             onClick={handleScrollToBottom}
-            size={"icon"}
-            variant={"outline"}
-            asChild
           >
-            <ArrowBigDownIcon size={20} strokeWidth={1.2} />
-          </Button>
+            <ChevronDownIcon className="w-full h-full" strokeWidth={1.2} />
+          </div>
         )}
       </>
     )

@@ -57,7 +57,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
         </ContextMenuContent>
       </ContextMenu>
     </div>
-  ) : message.action === MessageAction.ReplyMessage ? (
+  ) : message.action === MessageAction.ReplyMessage && message.replyTo ? (
     <div
       key={message.id}
       className={`flex items-center space-x-2 my-2 w-full rounded-lg animate-slide-in ${

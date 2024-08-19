@@ -21,7 +21,7 @@ const ChatMessageBox = ({
   type,
   content,
   isMe,
-  bgColor = "bg-gray-200",
+  bgColor = "bg-white",
   handleReplyMessage,
 }: ChatMessageBoxProps) => {
   return (
@@ -35,10 +35,8 @@ const ChatMessageBox = ({
             />
           )}
           <div
-            className={`bg-opacity-55 max-w-xs 
-        ${bgColor} ${
-              type === MessageType.Text ? "rounded-xl px-4 py-1" : "p-0"
-            } 
+            className={`max-w-xs ${bgColor} shadow-xl rounded-xl overflow-hidden
+        ${type === MessageType.Text ? "px-4 py-1" : "p-0"} 
         ${type === MessageType.Image ? "cursor-pointer" : ""}`}
           >
             {type === MessageType.Text ? (
