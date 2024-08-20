@@ -11,6 +11,7 @@ interface ChatState {
   typingMessage: TypingMessage | null;
   setInboxList: (inboxes: Inbox[]) => void;
   updateInbox: (inbox: Inbox) => void;
+  deteteInbox: (inboxId: number) => void;
   setCurrentInbox: (inbox: Inbox) => void;
   setMessageList: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
@@ -38,6 +39,11 @@ const useChatStore = create<ChatState>((set) => ({
       inboxList: state.inboxList.map((i) =>
         i.room.id === inbox.room.id ? inbox : i
       ),
+    }));
+  },
+  deteteInbox: (inboxId) => {
+    set((state) => ({
+      inboxList: state.inboxList.filter((i) => i.room.id !== inboxId),
     }));
   },
   setCurrentInbox: (inbox) => set({ currentInbox: inbox }),

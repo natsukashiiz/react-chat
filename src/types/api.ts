@@ -76,10 +76,11 @@ export interface Room {
   name: string | null;
   image: string | null;
   members: GroupMember[];
-  friend: Profile;
+  friend: Friend;
   messages: Message[];
   messageCount: number | null;
   unreadCount: number | null;
+  muted: boolean;
 }
 
 export interface Inbox {
@@ -98,7 +99,7 @@ export interface GroupMember {
   username: string;
   mobile: string;
   nickname: string;
-  avatar: string;
+  avatar?: string;
   lastSeenAt: Date;
   owner?: boolean;
 }
@@ -130,7 +131,7 @@ export interface ReplyMessageBody {
 }
 
 export interface Friend {
-  friend: Profile;
+  profile: Profile;
   status: FriendStatus;
 }
 

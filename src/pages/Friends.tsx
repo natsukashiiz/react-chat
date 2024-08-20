@@ -96,20 +96,20 @@ const Friends = () => {
             <div className="w-full flex flex-col items-center space-y-4">
               <div className="flex space-x-4 border p-5 rounded-xl">
                 <UserAvatar
-                  avatar={friend.friend.avatar}
-                  name={friend.friend.nickname}
+                  avatar={friend.profile.avatar}
+                  name={friend.profile.nickname}
                 />
                 <div>
-                  <div className="font-semibold">{friend?.friend.username}</div>
+                  <div className="font-semibold">{friend.profile.username}</div>
                   <div className="text-sm text-gray-500">
-                    {friend?.friend.mobile}
+                    {friend.profile.mobile}
                   </div>
                 </div>
               </div>
               <Button
-                onClick={() => handleAddFriend(friend.friend.id)}
+                onClick={() => handleAddFriend(friend.profile.id)}
                 disabled={
-                  friend.status != null || friend.friend.id === profile?.id
+                  friend.status != null || friend.profile.id === profile?.id
                 }
               >
                 {friend.status != null ? friend.status : "Add Friend"}
@@ -126,37 +126,37 @@ const Friends = () => {
           <div className="flex flex-col h-full items-center justify-center p-6">
             {friendList.length > 0 ? (
               friendList
-                .sort((a, b) => b.friend.id - a.friend.id)
+                .sort((a, b) => b.profile.id - a.profile.id)
                 .map((friend) => (
                   <div
-                    key={friend.friend.id}
+                    key={friend.profile.id}
                     className="w-full flex items-center justify-between space-x-4"
                   >
                     <div className="flex space-x-4">
                       <UserAvatar
-                        avatar={friend.friend.avatar}
-                        name={friend.friend.nickname}
+                        avatar={friend.profile.avatar}
+                        name={friend.profile.nickname}
                       />
                       <div>
                         <div className="font-semibold">
-                          {friend.friend.username}
+                          {friend.profile.username}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {friend.friend.mobile}
+                          {friend.profile.mobile}
                         </div>
                       </div>
                     </div>
                     <div className="flex space-x-2">
                       <Button
                         size={"sm"}
-                        onClick={() => handleAcceptFriend(friend.friend.id)}
+                        onClick={() => handleAcceptFriend(friend.profile.id)}
                       >
                         Accept
                       </Button>
                       <Button
                         size={"sm"}
                         variant={"outline"}
-                        onClick={() => handleRejectFriend(friend.friend.id)}
+                        onClick={() => handleRejectFriend(friend.profile.id)}
                       >
                         Reject
                       </Button>

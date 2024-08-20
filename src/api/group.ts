@@ -47,3 +47,11 @@ export const removeMemberGroup = (
 ): ServerResponse<Room> => {
   return client.delete(`/v1/groups/${roomId}/members/${userId}`);
 };
+
+export const leaveGroup = (roomId: number): ServerResponse<Room> => {
+  return client.delete(`/v1/groups/${roomId}/leave`);
+};
+
+export const deleteGroup = (roomId: number): ServerResponse<Room> => {
+  return client.delete(`/v1/groups/${roomId}`);
+};

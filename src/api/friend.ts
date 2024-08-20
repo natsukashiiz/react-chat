@@ -21,3 +21,15 @@ export const acceptFriend = (friendId: number): ServerResponse<Friend> => {
 export const rejectFriend = (friendId: number): ServerResponse<Friend> => {
   return client.post(`/v1/friends/${friendId}/reject`);
 };
+
+export const blockFriend = (friendId: number): ServerResponse<Friend> => {
+  return client.post(`/v1/friends/${friendId}/block`);
+};
+
+export const unblockFriend = (friendId: number): ServerResponse<Friend> => {
+  return client.post(`/v1/friends/${friendId}/unblock`);
+};
+
+export const unfriend = (friendId: number): ServerResponse<Friend> => {
+  return client.post(`/v1/friends/${friendId}/unfriend`);
+};

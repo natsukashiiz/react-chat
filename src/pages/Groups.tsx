@@ -166,27 +166,29 @@ const Groups = () => {
                   <div className="flex flex-col items-center justify-center space-y-2">
                     {friendList.length > 0 ? (
                       friendList
-                        .sort((a, b) => b.friend.id - a.friend.id)
+                        .sort((a, b) => b.profile.id - a.profile.id)
                         .map((friend) => (
                           <div
-                            key={friend.friend.id}
+                            key={friend.profile.id}
                             className={`w-full flex items-center justify-between space-x-4 p-2 rounded-xl cursor-pointer hover:bg-accent ${
-                              groupMembers.includes(friend.friend.id) &&
+                              groupMembers.includes(friend.profile.id) &&
                               "bg-blue-100"
                             }`}
-                            onClick={() => handleSelectFriend(friend.friend.id)}
+                            onClick={() =>
+                              handleSelectFriend(friend.profile.id)
+                            }
                           >
                             <div className="flex space-x-4">
                               <UserAvatar
-                                avatar={friend.friend.avatar}
-                                name={friend.friend.nickname}
+                                avatar={friend.profile.avatar}
+                                name={friend.profile.nickname}
                               />
                               <div>
                                 <div className="font-semibold">
-                                  {friend.friend.username}
+                                  {friend.profile.username}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  {friend.friend.mobile}
+                                  {friend.profile.mobile}
                                 </div>
                               </div>
                             </div>

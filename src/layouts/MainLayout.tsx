@@ -165,7 +165,7 @@ const MainLayout = () => {
 
   return (
     <div className="w-full h-dvh">
-      <Toaster position="top-right" closeButton={true} duration={5000} />
+      <Toaster position="top-right" closeButton={true} duration={3000} />
       <Outlet />
     </div>
   );

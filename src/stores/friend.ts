@@ -16,7 +16,7 @@ const useFriendStore = create<FriendState>((set) => ({
   removeFriendList: (friendId) =>
     set((state) => ({
       friendList: state.friendList.filter(
-        ({ friend }) => friend.id !== friendId
+        ({ profile }) => profile.id !== friendId
       ),
     })),
 }));
