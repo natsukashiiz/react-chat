@@ -10,9 +10,10 @@ interface ChatState {
   typing: boolean;
   typingMessage: TypingMessage | null;
   setInboxList: (inboxes: Inbox[]) => void;
+  addInbox: (inbox: Inbox) => void;
   updateInbox: (inbox: Inbox) => void;
   deteteInbox: (inboxId: number) => void;
-  setCurrentInbox: (inbox: Inbox) => void;
+  setCurrentInbox: (inbox: Inbox | null) => void;
   setMessageList: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
   setMessageBody: (body: SendMessageBody) => void;
@@ -34,6 +35,16 @@ const useChatStore = create<ChatState>((set) => ({
   typing: false,
   typingMessage: null,
   setInboxList: (inboxes) => set({ inboxList: inboxes }),
+  addInbox: (inbox) => {
+    set((state) => ({ inboxList: [...state.inboxList, inbox] }));
+
+    set((state) => {
+      if (state.currentInbox?.room.id === inbox.room.id) {
+        return { currentInbox: inbox };
+      }
+      return state;
+    });
+  },
   updateInbox: (inbox) => {
     set((state) => ({
       inboxList: state.inboxList.map((i) =>
@@ -41,9 +52,9 @@ const useChatStore = create<ChatState>((set) => ({
       ),
     }));
   },
-  deteteInbox: (inboxId) => {
+  deteteInbox: (roomId) => {
     set((state) => ({
-      inboxList: state.inboxList.filter((i) => i.room.id !== inboxId),
+      inboxList: state.inboxList.filter((i) => i.room.id !== roomId),
     }));
   },
   setCurrentInbox: (inbox) => set({ currentInbox: inbox }),

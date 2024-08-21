@@ -5,7 +5,6 @@ import Login from "@/pages/Login";
 import SignUp from "@/pages/SignUp";
 import Chat from "@/pages/Chat";
 import Friends from "@/pages/Friends";
-import AuthProvider from "@/providers/AuthProvider";
 import MainLayout from "@/layouts/MainLayout";
 import Groups from "@/pages/Groups";
 

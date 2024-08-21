@@ -20,7 +20,7 @@ interface GroupAddMemberModalProps {
   onClose: () => void;
 }
 const GroupAddMemberModal = ({ isOpen, onClose }: GroupAddMemberModalProps) => {
-  const { currentInbox } = useChatStore();
+  const { currentInbox, updateInbox } = useChatStore();
   const [friendList, setFriendList] = useState<Friend[]>([]);
 
   useEffect(() => {
@@ -45,11 +45,15 @@ const GroupAddMemberModal = ({ isOpen, onClose }: GroupAddMemberModalProps) => {
         memberIds: [member.id],
       });
       if (res.status === 200 && res.data) {
-        toast.success(`Add ${member.nickname} to group success`);
-        currentInbox.room.members.push({
-          ...member,
-          owner: false,
+        updateInbox({
+          ...currentInbox,
+          room: {
+            ...currentInbox.room,
+            members: [...currentInbox.room.members, member],
+          },
         });
+        currentInbox.room.members.push(member);
+        toast.success(`Add ${member.nickname} to group success`);
       }
     } catch (error) {
       console.error(error);
@@ -61,48 +65,49 @@ const GroupAddMemberModal = ({ isOpen, onClose }: GroupAddMemberModalProps) => {
       <DialogContent className="max-h-screen overflow-y-scroll overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="mb-2">Add members</DialogTitle>
-          <DialogDescription className="w-full flex flex-col space-y-4">
-            <div className="flex flex-col items-center justify-center space-y-2">
-              {friendList.length > 0 ? (
-                friendList
-                  .sort((a, b) => b.profile.id - a.profile.id)
-                  .map((friend) => (
-                    <div
-                      key={friend.profile.id}
-                      className={`w-full flex items-center justify-between space-x-4 p-2 rounded-xl`}
-                    >
-                      <div className="flex space-x-4">
-                        <UserAvatar
-                          avatar={friend.profile.avatar}
-                          name={friend.profile.nickname}
-                        />
-                        <div>
-                          <div className="font-semibold">
-                            {friend.profile.username}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {friend.profile.mobile}
-                          </div>
+          <DialogDescription>Add friends to group</DialogDescription>
+        </DialogHeader>
+        <div className="w-full flex flex-col space-y-4">
+          <div className="flex flex-col items-center justify-center space-y-2">
+            {friendList.length > 0 ? (
+              friendList
+                .sort((a, b) => b.profile.id - a.profile.id)
+                .map((friend) => (
+                  <div
+                    key={friend.profile.id}
+                    className={`w-full flex items-center justify-between space-x-4 p-2 rounded-xl`}
+                  >
+                    <div className="flex space-x-4">
+                      <UserAvatar
+                        avatar={friend.profile.avatar}
+                        name={friend.profile.nickname}
+                      />
+                      <div>
+                        <div className="font-semibold">
+                          {friend.profile.username}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {friend.profile.mobile}
                         </div>
                       </div>
-                      {!currentInbox.room.members.some(
-                        (member) => member.id === friend.profile.id
-                      ) && (
-                        <Button
-                          size={"sm"}
-                          onClick={() => handleAddMember(friend.profile)}
-                        >
-                          Add
-                        </Button>
-                      )}
                     </div>
-                  ))
-              ) : (
-                <div className="text-center">Empty friends</div>
-              )}
-            </div>
-          </DialogDescription>
-        </DialogHeader>
+                    {!currentInbox.room.members.some(
+                      (member) => member.id === friend.profile.id
+                    ) && (
+                      <Button
+                        size={"sm"}
+                        onClick={() => handleAddMember(friend.profile)}
+                      >
+                        Add
+                      </Button>
+                    )}
+                  </div>
+                ))
+            ) : (
+              <div className="text-center">Empty friends</div>
+            )}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

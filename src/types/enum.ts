@@ -18,6 +18,7 @@ export enum MessageAction {
   ChangeGroupChatPhoto = "ChangeGroupChatPhoto",
   RemoveGroupMember = "RemoveGroupMember",
   AddGroupMember = "AddGroupMember",
+  DeleteGroupChat = "DeleteGroupChat",
 }
 
 export enum MessageType {

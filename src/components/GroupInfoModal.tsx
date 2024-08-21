@@ -16,6 +16,7 @@ import { useState } from "react";
 import useAuthStore from "@/stores/auth";
 import { removeMemberGroup, leaveGroup, deleteGroup } from "@/api/group";
 import GroupAddMemberModal from "./GroupAddMemberModal";
+import UserInfoModal from "./UserInfoModal";
 
 interface GroupInfoModalProps {
   isOpen: boolean;
@@ -24,11 +25,14 @@ interface GroupInfoModalProps {
 }
 const GroupInfoModal = ({ isOpen, onClose, group }: GroupInfoModalProps) => {
   const { profile } = useAuthStore();
-  const { currentInbox, updateInbox } = useChatStore();
+  const { currentInbox, updateInbox, deteteInbox, setCurrentInbox } =
+    useChatStore();
   const [isOpenAddMember, setIsOpenAddMember] = useState(false);
   const [isMuted, setIsMuted] = useState(currentInbox?.room.muted);
   const selfOwner =
     group.members.find((member) => member.owner)?.id === profile?.id;
+  const [isOpenUserInfo, setIsOpenUserInfo] = useState(false);
+  const [currentMember, setCurrentMember] = useState<Profile | null>(null);
 
   if (!currentInbox) {
     return <p>Something wrong!</p>;
@@ -115,6 +119,9 @@ const GroupInfoModal = ({ isOpen, onClose, group }: GroupInfoModalProps) => {
     try {
       const res = await leaveGroup(group.id);
       if (res.status === 200 && res.data) {
+        deteteInbox(group.id);
+        setCurrentInbox(null);
+        onClose();
         toast.success("Group left");
       }
     } catch (error) {
@@ -126,8 +133,10 @@ const GroupInfoModal = ({ isOpen, onClose, group }: GroupInfoModalProps) => {
     try {
       const res = await deleteGroup(group.id);
       if (res.status === 200 && res.data) {
-        toast.success("Group deleted");
+        deteteInbox(group.id);
+        setCurrentInbox(null);
         onClose();
+        toast.success("Group deleted");
       }
     } catch (error) {
       console.error(error);
@@ -140,100 +149,123 @@ const GroupInfoModal = ({ isOpen, onClose, group }: GroupInfoModalProps) => {
         isOpen={isOpenAddMember}
         onClose={() => setIsOpenAddMember(false)}
       />
+      {currentMember && isOpenUserInfo && (
+        <UserInfoModal
+          isOpen={isOpenUserInfo}
+          onClose={() => setIsOpenUserInfo(false)}
+          profile={currentMember}
+        />
+      )}
       <Dialog open={isOpen} onOpenChange={() => onClose()}>
         <DialogContent className="max-h-screen overflow-y-scroll overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="mb-2">Group Info</DialogTitle>
-            <DialogDescription className="w-full flex flex-col space-y-4">
-              <div className="flex items-center space-x-2 rounded-lg border p-3 shadow-sm">
-                <UserAvatar
-                  avatar={group.image!}
-                  name={group.name!}
-                  className="w-16 h-16 text-2xl"
-                />
-                <div className="flex flex-col">
-                  <span className="font-semibold text-base text-black">
-                    {group.name}
-                  </span>
-                  <span className="text-xs">
-                    {group.members.length} Members
-                  </span>
-                </div>
+            <DialogDescription>
+              Group information and settings
+            </DialogDescription>
+          </DialogHeader>
+          <div className="w-full flex flex-col space-y-4">
+            <div className="flex items-center space-x-2 rounded-lg border p-3 shadow-sm">
+              <UserAvatar
+                avatar={group.image!}
+                name={group.name!}
+                className="w-16 h-16 text-2xl"
+              />
+              <div className="flex flex-col">
+                <span className="font-semibold text-base text-black">
+                  {group.name}
+                </span>
+                <span className="text-xs">{group.members.length} Members</span>
               </div>
-              <div className="flex flex-col rounded-lg border p-3 shadow-sm space-y-2">
-                <div className="flex flex-row justify-between items-center">
-                  <span>Members ({group.members.length})</span>
-                  {selfOwner && (
-                    <Button
-                      size={"sm"}
-                      variant={"default"}
-                      onClick={() => setIsOpenAddMember(true)}
-                    >
-                      Add
-                    </Button>
-                  )}
-                </div>
-                {group.members
-                  .sort((m) => (m.owner ? -1 : 1))
-                  .map((member) => (
-                    <div className="flex flex-row justify-between items-center">
-                      <div className="flex flex-row items-center space-x-2">
-                        <UserAvatar
-                          avatar={member.avatar}
-                          name={member.nickname}
-                          className="w-12 h-12"
-                        />
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-base text-black">
-                            {member.nickname} {member.owner && "(owner)"}
-                          </span>
-                          <span className="text-xs">
-                            last seen at {member.lastSeenAt.toString()}
-                          </span>
-                        </div>
+            </div>
+            <div className="flex flex-col rounded-lg border p-3 shadow-sm space-y-2">
+              <div className="flex flex-row justify-between items-center">
+                <span>Members ({group.members.length})</span>
+                {selfOwner && (
+                  <Button
+                    size={"sm"}
+                    variant={"default"}
+                    onClick={() => setIsOpenAddMember(true)}
+                  >
+                    Add
+                  </Button>
+                )}
+              </div>
+              {group.members
+                .sort((m) => (m.owner ? -1 : 1))
+                .map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex flex-row justify-between items-center"
+                  >
+                    <div className="flex flex-row items-center space-x-2">
+                      <UserAvatar
+                        avatar={member.avatar}
+                        name={member.nickname}
+                        className="w-12 h-12"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-base text-black">
+                          {member.nickname} {member.owner && "(owner)"}
+                        </span>
+                        <span className="text-xs">
+                          last seen at {member.lastSeenAt.toString()}
+                        </span>
                       </div>
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button
+                        size={"sm"}
+                        variant={"outline"}
+                        onClick={() => {
+                          setCurrentMember(member);
+                          setIsOpenUserInfo(true);
+                        }}
+                      >
+                        View
+                      </Button>
                       {selfOwner && profile?.id !== member.id && (
                         <Button
                           size={"sm"}
-                          variant={"outline"}
+                          variant={"destructive"}
                           onClick={() => handleRemoveMember(member)}
                         >
                           Remove
                         </Button>
                       )}
                     </div>
-                  ))}
-              </div>
-              <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <span>Notifications</span>
-                <Switch
-                  checked={!isMuted}
-                  onCheckedChange={handleChangeNotification}
-                />
-              </div>
-              <div className="flex flex-col items-cente rounded-lg border p-3 shadow-sm space-y-2">
-                {selfOwner ? (
-                  <Button
-                    variant={"destructive"}
-                    size={"sm"}
-                    className="w-full"
-                    onClick={handleDeleteGroup}
-                  >
-                    Delete group
-                  </Button>
-                ) : (
-                  <Button
-                    variant={"destructive"}
-                    size={"sm"}
-                    className="w-full"
-                    onClick={handleLeaveGroup}
-                  >
-                    Leave group
-                  </Button>
-                )}
-              </div>
-            </DialogDescription>
-          </DialogHeader>
+                  </div>
+                ))}
+            </div>
+            <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+              <span>Notifications</span>
+              <Switch
+                checked={!isMuted}
+                onCheckedChange={handleChangeNotification}
+              />
+            </div>
+            <div className="flex flex-col items-cente rounded-lg border p-3 shadow-sm space-y-2">
+              {selfOwner ? (
+                <Button
+                  variant={"destructive"}
+                  size={"sm"}
+                  className="w-full"
+                  onClick={handleDeleteGroup}
+                >
+                  Delete group
+                </Button>
+              ) : (
+                <Button
+                  variant={"destructive"}
+                  size={"sm"}
+                  className="w-full"
+                  onClick={handleLeaveGroup}
+                >
+                  Leave group
+                </Button>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
 import { useEffect, useRef, useState } from "react";
-import type { Friend, Message, TypingMessage } from "@/types/api";
+import type { Friend, Inbox, Message, TypingMessage } from "@/types/api";
 import useAuthStore from "@/stores/auth";
 import { over, type Client } from "stompjs";
 import SockJS from "sockjs-client";
@@ -15,11 +15,13 @@ import { toast } from "sonner";
 
 let stompClient: Client | null = null;
 const MainLayout = () => {
-  const { token, authenticated } = useAuthStore();
+  const { token, authenticated, profile } = useAuthStore();
   const {
     inboxList,
     currentInbox,
+    addInbox,
     updateInbox,
+    deteteInbox,
     addMessage,
     setCurrentInbox,
     typing,
@@ -30,6 +32,7 @@ const MainLayout = () => {
 
   const stompClientRef = useRef<Client | null>(null);
   const [newMessage, setNewMessage] = useState<Message | null>(null);
+  const [newInbox, setNewInbox] = useState<Inbox | null>(null);
 
   const nagivation = useNavigate();
 
@@ -59,9 +62,16 @@ const MainLayout = () => {
         { Authorization: `Bearer ${token.accessToken}` },
         () => {
           stompClientRef.current?.subscribe(
+            "/user/topic/inboxes",
+            (message) => {
+              setNewInbox(JSON.parse(message.body) as Inbox);
+            }
+          );
+
+          stompClientRef.current?.subscribe(
             "/user/topic/messages",
             (message) => {
-              const newMessage = JSON.parse(message.body);
+              const newMessage = JSON.parse(message.body) as Message;
               setNewMessage(newMessage);
             }
           );
@@ -102,6 +112,32 @@ const MainLayout = () => {
       }
     };
   }, [token]);
+
+  useEffect(() => {
+    if (newInbox) {
+      const inbox = inboxList.find(
+        (inbox) => inbox.room.id === newInbox.room.id
+      );
+      if (inbox) {
+        const mIdx = inbox.room.members.findIndex((m) => m.id === profile?.id);
+        if (mIdx === 1) {
+          updateInbox(newInbox);
+
+          if (currentInbox && currentInbox.room.id === newInbox.room.id) {
+            setCurrentInbox(newInbox);
+          }
+        } else {
+          deteteInbox(inbox.room.id);
+
+          if (currentInbox && currentInbox.room.id === newInbox.room.id) {
+            setCurrentInbox(null);
+          }
+        }
+      } else {
+        addInbox(newInbox);
+      }
+    }
+  }, [newInbox]);
 
   useEffect(() => {
     if (typing) {
@@ -153,19 +189,13 @@ const MainLayout = () => {
   }, [newMessage]);
 
   if (authenticated === false) {
-    return (
-      <p>
-        Please login to continue{" "}
-        <a href="/login" className="underline">
-          login
-        </a>
-      </p>
-    );
+    window.location.href = "/login";
+    return null;
   }
 
   return (
     <div className="w-full h-dvh">
-      <Toaster position="top-right" closeButton={true} duration={3000} />
+      <Toaster position="top-center" closeButton={true} duration={1500} />
       <Outlet />
     </div>
   );

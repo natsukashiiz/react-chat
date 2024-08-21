@@ -11,7 +11,7 @@ import useChatStore from "@/stores/chat";
 import { Button } from "./ui/button";
 import { blockFriend, unblockFriend, unfriend } from "@/api/friend";
 import { toast } from "sonner";
-import { Friend } from "@/types/api";
+import { Profile } from "@/types/api";
 import { FriendStatus } from "@/types/enum";
 import { muteRoom, unmuteRoom } from "@/api/room";
 import { useState } from "react";
@@ -19,80 +19,83 @@ import { useState } from "react";
 interface UserInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  friend: Friend;
+  profile: Profile;
+  status?: FriendStatus;
 }
-const UserInfoModal = ({ isOpen, onClose, friend }: UserInfoModalProps) => {
+const UserInfoModal = ({
+  isOpen,
+  onClose,
+  profile,
+  status,
+}: UserInfoModalProps) => {
   const { currentInbox, updateInbox, deteteInbox } = useChatStore();
   const [isMuted, setIsMuted] = useState(currentInbox?.room.muted);
+  const friendId = status ? currentInbox?.room.friend.profile.id : profile.id;
+  const roomId = currentInbox?.room.id;
+
+  if (!friendId || !roomId) {
+    return <p>Something wrong!</p>;
+  }
 
   const handleBlock = async () => {
-    const friendId = currentInbox?.room.friend.profile.id;
-    if (friendId) {
-      try {
-        const res = await blockFriend(friendId);
-        if (res.status === 200 && res.data) {
-          toast.success("User blocked");
-          if (currentInbox) {
-            updateInbox({
-              ...currentInbox,
-              room: {
-                ...currentInbox.room,
-                friend: {
-                  ...currentInbox.room.friend,
-                  status: FriendStatus.BlockBySelf,
-                },
+    try {
+      const res = await blockFriend(friendId);
+      if (res.status === 200 && res.data) {
+        toast.success("User blocked");
+        if (currentInbox) {
+          updateInbox({
+            ...currentInbox,
+            room: {
+              ...currentInbox.room,
+              friend: {
+                ...currentInbox.room.friend,
+                status: FriendStatus.BlockBySelf,
               },
-            });
-            currentInbox.room.friend.status = FriendStatus.BlockBySelf;
-          }
+            },
+          });
+          currentInbox.room.friend.status = FriendStatus.BlockBySelf;
         }
-      } catch (error) {
-        console.error(error);
       }
+    } catch (error) {
+      console.error(error);
     }
   };
 
   const handleUnblock = async () => {
-    const friendId = currentInbox?.room.friend.profile.id;
-    if (friendId) {
-      try {
-        const res = await unblockFriend(friendId);
-        if (res.status === 200 && res.data) {
-          toast.success("User unblocked");
-          if (currentInbox) {
-            updateInbox({
-              ...currentInbox,
-              room: {
-                ...currentInbox.room,
-                friend: {
-                  ...currentInbox.room.friend,
-                  status: FriendStatus.Friend,
-                },
+    try {
+      const res = await unblockFriend(friendId);
+      if (res.status === 200 && res.data) {
+        toast.success("User unblocked");
+        if (currentInbox) {
+          updateInbox({
+            ...currentInbox,
+            room: {
+              ...currentInbox.room,
+              friend: {
+                ...currentInbox.room.friend,
+                status: FriendStatus.Friend,
               },
-            });
-            currentInbox.room.friend.status = FriendStatus.Friend;
-          }
+            },
+          });
+          currentInbox.room.friend.status = FriendStatus.Friend;
         }
-      } catch (error) {
-        console.error(error);
       }
+    } catch (error) {
+      console.error(error);
     }
   };
 
   const handleUnfriend = async () => {
-    const friendId = currentInbox?.room.friend.profile.id;
-    if (friendId) {
-      try {
-        const res = await unfriend(friendId);
-        if (res.status === 200 && res.data) {
-          toast.success("User unfriended");
-          if (currentInbox) {
-            deteteInbox(currentInbox.id);
-          }
+    try {
+      const res = await unfriend(friendId);
+      if (res.status === 200 && res.data) {
+        toast.success("User unfriended");
+        if (currentInbox) {
+          deteteInbox(currentInbox.id);
         }
-      } catch (error) {
-        console.error(error);
       }
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -122,27 +125,24 @@ const UserInfoModal = ({ isOpen, onClose, friend }: UserInfoModalProps) => {
   };
 
   const handleUnmute = async () => {
-    const roomId = currentInbox?.room.id;
-    if (roomId) {
-      try {
-        const res = await unmuteRoom(roomId);
-        if (res.status === 200 && res.data) {
-          toast.success("Room unmuted");
-          if (currentInbox) {
-            updateInbox({
-              ...currentInbox,
-              room: {
-                ...currentInbox.room,
-                muted: false,
-              },
-            });
-            currentInbox.room.muted = false;
-            setIsMuted(false);
-          }
+    try {
+      const res = await unmuteRoom(roomId);
+      if (res.status === 200 && res.data) {
+        toast.success("Room unmuted");
+        if (currentInbox) {
+          updateInbox({
+            ...currentInbox,
+            room: {
+              ...currentInbox.room,
+              muted: false,
+            },
+          });
+          currentInbox.room.muted = false;
+          setIsMuted(false);
         }
-      } catch (error) {
-        console.error(error);
       }
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -159,36 +159,35 @@ const UserInfoModal = ({ isOpen, onClose, friend }: UserInfoModalProps) => {
       <DialogContent className="max-h-screen overflow-y-scroll overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="mb-2">User Info</DialogTitle>
-          <DialogDescription className="w-full flex flex-col space-y-4">
-            <div className="flex items-center space-x-2 rounded-lg border p-3 shadow-sm">
-              <UserAvatar
-                avatar={friend.profile.avatar}
-                name={friend.profile.nickname}
-                className="w-16 h-16 text-2xl"
-              />
-              <div className="flex flex-col">
-                <span className="font-semibold text-base text-black">
-                  {friend.profile.nickname}
-                </span>
-                <span className="text-xs">
-                  last seen at {friend.profile.lastSeenAt.toString()}
-                </span>
-              </div>
+          <DialogDescription>User information and settings</DialogDescription>
+        </DialogHeader>
+        <div className="w-full flex flex-col space-y-4">
+          <div className="flex items-center space-x-2 rounded-lg border p-3 shadow-sm">
+            <UserAvatar
+              avatar={profile.avatar}
+              name={profile.nickname}
+              className="w-16 h-16 text-2xl"
+            />
+            <div className="flex flex-col">
+              <span className="font-semibold text-base text-black">
+                {profile.nickname}
+              </span>
+              <span className="text-xs">
+                last seen at {profile.lastSeenAt.toString()}
+              </span>
             </div>
-            <div className="flex flex-col rounded-lg border p-3 shadow-sm space-y-4">
-              <div className="flex flex-col">
-                <span className="text-sm text-black">
-                  {friend.profile.mobile}
-                </span>
-                <span className="text-xs">Mobile</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm text-black">
-                  @{friend.profile.username}
-                </span>
-                <span className="text-xs">Username</span>
-              </div>
+          </div>
+          <div className="flex flex-col rounded-lg border p-3 shadow-sm space-y-4">
+            <div className="flex flex-col">
+              <span className="text-sm text-black">{profile.mobile}</span>
+              <span className="text-xs">Mobile</span>
             </div>
+            <div className="flex flex-col">
+              <span className="text-sm text-black">@{profile.username}</span>
+              <span className="text-xs">Username</span>
+            </div>
+          </div>
+          {status === FriendStatus.Friend && (
             <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
               <span>Notifications</span>
               <Switch
@@ -196,10 +195,12 @@ const UserInfoModal = ({ isOpen, onClose, friend }: UserInfoModalProps) => {
                 onCheckedChange={handleChangeNotification}
               />
             </div>
+          )}
+          {status && (
             <div className="flex flex-col items-cente rounded-lg border p-3 shadow-sm space-y-2">
               <div className="flex flex-row items-center justify-between">
                 <span>Block</span>
-                {friend.status === FriendStatus.BlockBySelf ? (
+                {status === FriendStatus.BlockBySelf ? (
                   <Button
                     variant={"secondary"}
                     size={"sm"}
@@ -228,8 +229,8 @@ const UserInfoModal = ({ isOpen, onClose, friend }: UserInfoModalProps) => {
                 </Button>
               </div>
             </div>
-          </DialogDescription>
-        </DialogHeader>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

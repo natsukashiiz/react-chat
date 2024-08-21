@@ -5,7 +5,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EllipsisVerticalIcon } from "lucide-react";
@@ -25,7 +24,8 @@ const ChatHeader = () => {
         <UserInfoModal
           isOpen={isOpenUserInfo}
           onClose={() => setIsOpenUserInfo(false)}
-          friend={currentInbox.room.friend}
+          profile={currentInbox.room.friend.profile}
+          status={currentInbox.room.friend.status}
         />
       )}
       {currentInbox && currentInbox.room.type === RoomType.Group && (
@@ -61,8 +61,6 @@ const ChatHeader = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem>Mute notifications</DropdownMenuItem>
-                <DropdownMenuSeparator />
                 {currentInbox.room.type == RoomType.Group ? (
                   <DropdownMenuItem onClick={() => setIsOpenGroupInfo(true)}>
                     View group
