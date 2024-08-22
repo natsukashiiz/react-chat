@@ -51,11 +51,11 @@ export interface Profile {
 }
 
 export interface UpdateProfileBody {
-  username: string;
-  mobile: string;
-  password: string;
-  nickname: string;
-  avatar: string;
+  username?: string;
+  mobile?: string;
+  password?: string;
+  nickname?: string;
+  avatar?: string;
 }
 
 export interface Message {

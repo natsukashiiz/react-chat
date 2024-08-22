@@ -10,6 +10,7 @@ interface AuthState {
   setToken: (token: Token) => void;
   loadAuth: () => void;
   loadProfile: () => void;
+  updateMyProfile: (profile: Profile) => void;
   clearAuth: () => void;
 }
 
@@ -65,6 +66,9 @@ const useAuthStore = create<AuthState>()((set, get) => ({
     } catch (error) {
       console.error(error);
     }
+  },
+  updateMyProfile: (profile) => {
+    set({ profile });
   },
   clearAuth: () => {
     localStorage.removeItem("token");

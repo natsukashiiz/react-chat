@@ -13,9 +13,9 @@ const InboxItem = ({ inbox }: InboxItemProps) => {
   return (
     <div
       key={inbox.id}
-      className={`flex items-center gap-2 px-1 my-1 w-full hover:bg-accent rounded-lg cursor-pointer transition-all duration-300 ${
+      className={`flex items-center gap-2 p-1 my-1 w-full hover:bg-accent rounded-lg cursor-pointer transition-all duration-300 ${
         inbox.room.id === currentInbox?.room.id
-          ? "border-[1.9px] border-blue-500"
+          ? "border-r-4 border-rose-500 bg-accent"
           : inbox.unreadCount > 0
           ? "bg-accent"
           : ""

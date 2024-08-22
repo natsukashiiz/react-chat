@@ -120,7 +120,7 @@ const MainLayout = () => {
       );
       if (inbox) {
         const mIdx = inbox.room.members.findIndex((m) => m.id === profile?.id);
-        if (mIdx === 1) {
+        if (mIdx !== -1) {
           updateInbox(newInbox);
 
           if (currentInbox && currentInbox.room.id === newInbox.room.id) {
@@ -189,7 +189,6 @@ const MainLayout = () => {
   }, [newMessage]);
 
   if (authenticated === false) {
-    window.location.href = "/login";
     return null;
   }
 

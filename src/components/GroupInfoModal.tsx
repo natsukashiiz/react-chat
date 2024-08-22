@@ -12,11 +12,15 @@ import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { Profile, Room } from "@/types/api";
 import { muteRoom, unmuteRoom } from "@/api/room";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import useAuthStore from "@/stores/auth";
 import { removeMemberGroup, leaveGroup, deleteGroup } from "@/api/group";
 import GroupAddMemberModal from "./GroupAddMemberModal";
 import UserInfoModal from "./UserInfoModal";
+import { updateGroupPhoto, updateGroupName } from "@/api/group";
+import { uploadFile } from "@/api/file";
+import { PenLineIcon, XIcon, SaveIcon, TrashIcon, EyeIcon } from "lucide-react";
+import { Input } from "./ui/input";
 
 interface GroupInfoModalProps {
   isOpen: boolean;
@@ -33,6 +37,9 @@ const GroupInfoModal = ({ isOpen, onClose, group }: GroupInfoModalProps) => {
     group.members.find((member) => member.owner)?.id === profile?.id;
   const [isOpenUserInfo, setIsOpenUserInfo] = useState(false);
   const [currentMember, setCurrentMember] = useState<Profile | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [groupName, setGroupName] = useState(group.name!);
+  const [editMode, setEditMode] = useState(false);
 
   if (!currentInbox) {
     return <p>Something wrong!</p>;
@@ -143,6 +150,48 @@ const GroupInfoModal = ({ isOpen, onClose, group }: GroupInfoModalProps) => {
     }
   };
 
+  const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await uploadFile(formData);
+        if (res.status === 200 && res.data) {
+          await handleUpdateGroupPhoto(res.data.data.url);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  const handleUpdateGroupPhoto = async (url: string) => {
+    try {
+      const res = await updateGroupPhoto(group.id, { photo: url });
+      if (res.status === 200 && res.data) {
+        toast.success("Group photo updated");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleSaveGroupName = async () => {
+    if (!groupName) return;
+
+    try {
+      const res = await updateGroupName(group.id, { name: groupName });
+      if (res.status === 200 && res.data) {
+        currentInbox.room.name = res.data.data.name;
+        setEditMode(false);
+        toast.success("Group name updated");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <>
       <GroupAddMemberModal
@@ -156,7 +205,14 @@ const GroupInfoModal = ({ isOpen, onClose, group }: GroupInfoModalProps) => {
           profile={currentMember}
         />
       )}
-      <Dialog open={isOpen} onOpenChange={() => onClose()}>
+      <Dialog
+        open={isOpen}
+        onOpenChange={() => {
+          onClose();
+          setEditMode(false);
+          setGroupName(group.name!);
+        }}
+      >
         <DialogContent className="max-h-screen overflow-y-scroll overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="mb-2">Group Info</DialogTitle>
@@ -166,15 +222,52 @@ const GroupInfoModal = ({ isOpen, onClose, group }: GroupInfoModalProps) => {
           </DialogHeader>
           <div className="w-full flex flex-col space-y-4">
             <div className="flex items-center space-x-2 rounded-lg border p-3 shadow-sm">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleUploadFile}
+                className="hidden"
+              />
               <UserAvatar
                 avatar={group.image!}
                 name={group.name!}
-                className="w-16 h-16 text-2xl"
+                className="w-16 h-16 text-2xl hover:outline hover:outline-2 hover:outline-rose-500 cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
               />
               <div className="flex flex-col">
-                <span className="font-semibold text-base text-black">
-                  {group.name}
-                </span>
+                <div className="flex space-x-1 items-center">
+                  {editMode ? (
+                    <>
+                      <Input
+                        className="font-semibold"
+                        value={groupName}
+                        onChange={(e) => setGroupName(e.target.value)}
+                      />
+                      <XIcon
+                        className="w-4 h-4 cursor-pointer hover:scale-150"
+                        onClick={() => {
+                          setEditMode(false);
+                          setGroupName(group.name!);
+                        }}
+                      />
+                      <SaveIcon
+                        className="w-4 h-4 cursor-pointer hover:scale-150"
+                        onClick={handleSaveGroupName}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-base text-black">
+                        {group.name}
+                      </span>
+                      <PenLineIcon
+                        className="w-4 h-4 cursor-pointer hover:scale-150"
+                        onClick={() => setEditMode(true)}
+                      />
+                    </>
+                  )}
+                </div>
                 <span className="text-xs">{group.members.length} Members</span>
               </div>
             </div>
@@ -214,24 +307,18 @@ const GroupInfoModal = ({ isOpen, onClose, group }: GroupInfoModalProps) => {
                       </div>
                     </div>
                     <div className="flex space-x-1">
-                      <Button
-                        size={"sm"}
-                        variant={"outline"}
+                      <EyeIcon
+                        className="w-4 h-4 cursor-pointer text-gray-600 hover:scale-125 transition-transform duration-300"
                         onClick={() => {
                           setCurrentMember(member);
                           setIsOpenUserInfo(true);
                         }}
-                      >
-                        View
-                      </Button>
+                      />
                       {selfOwner && profile?.id !== member.id && (
-                        <Button
-                          size={"sm"}
-                          variant={"destructive"}
+                        <TrashIcon
+                          className="w-4 h-4 cursor-pointer text-red-600 hover:scale-125 transition-transform duration-300"
                           onClick={() => handleRemoveMember(member)}
-                        >
-                          Remove
-                        </Button>
+                        />
                       )}
                     </div>
                   </div>
